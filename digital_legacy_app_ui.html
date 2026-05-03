@@ -1,0 +1,942 @@
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --navy:#0a0f1e;--navy2:#111827;--panel:#131c2e;--panel2:#1a2540;
+    --glass:rgba(255,255,255,0.05);--glass2:rgba(255,255,255,0.08);
+    --border:rgba(255,255,255,0.1);--border2:rgba(255,255,255,0.18);
+    --gold:#d4a853;--gold2:#f0c97a;--gold-dim:rgba(212,168,83,0.15);
+    --green:#2dd4a0;--green-dim:rgba(45,212,160,0.12);
+    --red:#f06a6a;--red-dim:rgba(240,106,106,0.12);
+    --blue:#5b9cf6;--blue-dim:rgba(91,156,246,0.12);
+    --text1:#f0f4ff;--text2:#8b97b8;--text3:#4a5578;
+    --r:12px;--r2:8px;--r3:20px;
+  }
+  body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text1);min-height:100vh;overflow-x:hidden}
+  h1,h2,h3,h4{font-family:'Syne',sans-serif}
+
+  /* ── LAYOUT ── */
+  .shell{display:flex;height:100vh;min-height:600px}
+  .sidebar{width:220px;min-width:220px;background:var(--navy2);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:0}
+  .main{flex:1;overflow-y:auto;background:var(--navy)}
+
+  /* ── SIDEBAR ── */
+  .logo-area{padding:24px 20px 20px;border-bottom:1px solid var(--border)}
+  .logo{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--gold);letter-spacing:.5px;display:flex;align-items:center;gap:8px}
+  .logo-icon{width:28px;height:28px;background:var(--gold-dim);border:1px solid var(--gold);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px}
+  .logo-sub{font-size:10px;color:var(--text2);font-family:'DM Sans',sans-serif;font-weight:400;margin-top:2px;letter-spacing:.3px}
+
+  .nav{flex:1;padding:12px 0}
+  .nav-section{font-size:10px;color:var(--text3);letter-spacing:1.2px;font-weight:600;padding:16px 20px 6px;font-family:'Syne',sans-serif}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:9px 20px;font-size:13px;color:var(--text2);cursor:pointer;transition:all .18s;border-left:2px solid transparent;font-weight:400}
+  .nav-item:hover{color:var(--text1);background:var(--glass);border-left-color:var(--border)}
+  .nav-item.active{color:var(--gold);background:var(--gold-dim);border-left-color:var(--gold);font-weight:500}
+  .nav-item svg{width:15px;height:15px;opacity:.7;flex-shrink:0}
+  .nav-item.active svg{opacity:1}
+
+  .sidebar-footer{padding:16px 20px;border-top:1px solid var(--border)}
+  .user-pill{display:flex;align-items:center;gap:10px}
+  .avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--gold),#a07030);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;font-family:'Syne',sans-serif;color:#fff;flex-shrink:0}
+  .user-name{font-size:12px;font-weight:500;color:var(--text1)}
+  .user-role{font-size:10px;color:var(--text2);margin-top:1px}
+
+  /* ── SCREENS ── */
+  .screen{display:none;padding:32px 36px;max-width:1100px}
+  .screen.active{display:block}
+
+  /* ── TOP BAR ── */
+  .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:32px}
+  .page-title{font-family:'Syne',sans-serif;font-size:22px;font-weight:700;color:var(--text1)}
+  .page-sub{font-size:13px;color:var(--text2);margin-top:3px;font-weight:400}
+  .topbar-right{display:flex;align-items:center;gap:10px}
+  .btn{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:var(--r2);font-size:13px;font-weight:500;cursor:pointer;transition:all .18s;font-family:'DM Sans',sans-serif;border:none}
+  .btn-gold{background:var(--gold);color:#1a0f00}
+  .btn-gold:hover{background:var(--gold2)}
+  .btn-ghost{background:var(--glass2);color:var(--text1);border:1px solid var(--border)}
+  .btn-ghost:hover{background:rgba(255,255,255,0.12);border-color:var(--border2)}
+  .btn-danger{background:var(--red-dim);color:var(--red);border:1px solid rgba(240,106,106,0.25)}
+  .btn-danger:hover{background:rgba(240,106,106,0.2)}
+
+  /* ── STAT CARDS ── */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px}
+  .stat-card{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px}
+  .stat-label{font-size:11px;color:var(--text2);letter-spacing:.5px;text-transform:uppercase;font-family:'Syne',sans-serif;font-weight:600}
+  .stat-value{font-size:26px;font-weight:700;font-family:'Syne',sans-serif;margin:8px 0 4px;color:var(--text1)}
+  .stat-badge{font-size:11px;display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;font-weight:500}
+  .badge-green{background:var(--green-dim);color:var(--green)}
+  .badge-gold{background:var(--gold-dim);color:var(--gold)}
+  .badge-red{background:var(--red-dim);color:var(--red)}
+  .badge-blue{background:var(--blue-dim);color:var(--blue)}
+  .badge-gray{background:var(--glass2);color:var(--text2)}
+
+  /* ── CARDS ── */
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:22px 24px;margin-bottom:16px}
+  .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+  .card-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:600;color:var(--text1)}
+  .card-sub{font-size:12px;color:var(--text2);margin-top:2px}
+
+  /* ── GRID ── */
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+
+  /* ── DMS ── */
+  .dms-ring{position:relative;width:140px;height:140px;flex-shrink:0}
+  .dms-ring svg{width:140px;height:140px}
+  .dms-ring-inner{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .dms-pct{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:var(--green)}
+  .dms-days{font-size:11px;color:var(--text2);margin-top:2px}
+  .dms-row{display:flex;align-items:center;gap:24px}
+  .dms-info{flex:1}
+  .dms-status{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;font-family:'Syne',sans-serif;background:var(--green-dim);color:var(--green);margin-bottom:10px}
+  .dms-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  .dms-threshold{margin-top:14px}
+  .dms-threshold-label{font-size:12px;color:var(--text2);margin-bottom:6px}
+  .track{height:6px;background:rgba(255,255,255,0.08);border-radius:3px;position:relative}
+  .track-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--green),#7dffd0);transition:width .4s}
+  .track-markers{display:flex;justify-content:space-between;margin-top:5px}
+  .track-marker{font-size:10px;color:var(--text3)}
+
+  /* ── VAULT ITEMS ── */
+  .vault-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .vault-item{background:var(--panel2);border:1px solid var(--border);border-radius:var(--r2);padding:14px;cursor:pointer;transition:all .18s;position:relative;overflow:hidden}
+  .vault-item:hover{border-color:var(--border2);background:rgba(255,255,255,0.06)}
+  .vault-item-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:10px}
+  .vi-doc{background:rgba(91,156,246,0.15)}
+  .vi-img{background:rgba(212,168,83,0.15)}
+  .vi-key{background:rgba(45,212,160,0.15)}
+  .vi-voice{background:rgba(240,106,106,0.15)}
+  .vi-name{font-size:13px;font-weight:500;color:var(--text1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .vi-size{font-size:11px;color:var(--text3);margin-top:3px}
+  .vi-enc{position:absolute;top:10px;right:10px;font-size:9px;color:var(--green);background:var(--green-dim);padding:2px 6px;border-radius:10px;font-weight:600;letter-spacing:.3px}
+
+  /* ── BENEFICIARIES ── */
+  .bene-item{display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--border)}
+  .bene-item:last-child{border-bottom:none}
+  .bene-avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;flex-shrink:0}
+  .bene-info{flex:1}
+  .bene-name{font-size:13px;font-weight:500;color:var(--text1)}
+  .bene-rel{font-size:11px;color:var(--text2);margin-top:2px}
+  .bene-perms{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}
+  .perm-tag{font-size:10px;padding:2px 7px;border-radius:10px;background:var(--glass2);color:var(--text2);border:1px solid var(--border)}
+  .bene-status{flex-shrink:0}
+
+  /* ── ACTIVITY ── */
+  .activity-item{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+  .activity-item:last-child{border-bottom:none}
+  .act-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px}
+  .act-text{font-size:13px;color:var(--text1);line-height:1.5}
+  .act-time{font-size:11px;color:var(--text3);margin-top:2px}
+
+  /* ── NOTIFICATIONS ── */
+  .notif-item{display:flex;align-items:flex-start;gap:14px;padding:14px 0;border-bottom:1px solid var(--border)}
+  .notif-item:last-child{border-bottom:none}
+  .notif-icon{width:36px;height:36px;border-radius:var(--r2);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+  .notif-body{flex:1}
+  .notif-title{font-size:13px;font-weight:500;color:var(--text1)}
+  .notif-msg{font-size:12px;color:var(--text2);margin-top:3px;line-height:1.5}
+  .notif-time{font-size:11px;color:var(--text3);margin-top:4px}
+
+  /* ── FORM ELEMENTS ── */
+  .form-group{margin-bottom:16px}
+  .form-label{font-size:12px;color:var(--text2);margin-bottom:6px;display:block;font-weight:500;letter-spacing:.3px}
+  .form-input{width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:var(--r2);padding:10px 14px;color:var(--text1);font-size:13px;font-family:'DM Sans',sans-serif;outline:none;transition:border .18s}
+  .form-input:focus{border-color:var(--gold)}
+  .form-select{width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:var(--r2);padding:10px 14px;color:var(--text1);font-size:13px;font-family:'DM Sans',sans-serif;outline:none}
+  .range-row{display:flex;align-items:center;gap:12px}
+  .range-val{font-size:14px;font-weight:600;color:var(--gold);font-family:'Syne',sans-serif;min-width:50px;text-align:right}
+  input[type=range]{flex:1;accent-color:var(--gold)}
+
+  /* ── SETTINGS ── */
+  .settings-section{margin-bottom:28px}
+  .settings-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border)}
+  .settings-row:last-child{border-bottom:none}
+  .settings-label{font-size:13px;color:var(--text1);font-weight:500}
+  .settings-desc{font-size:12px;color:var(--text2);margin-top:2px}
+  .toggle{width:40px;height:22px;border-radius:11px;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0}
+  .toggle.on{background:var(--green)}
+  .toggle.off{background:var(--text3)}
+  .toggle-thumb{width:16px;height:16px;border-radius:50%;background:#fff;position:absolute;top:3px;transition:left .2s}
+  .toggle.on .toggle-thumb{left:21px}
+  .toggle.off .toggle-thumb{left:3px}
+
+  /* ── MESSAGE COMPOSER ── */
+  .message-card{background:var(--panel2);border:1px solid var(--border);border-radius:var(--r2);padding:14px;margin-bottom:10px;cursor:pointer;transition:all .18s}
+  .message-card:hover{border-color:var(--gold);background:var(--gold-dim)}
+  .msg-recipient{font-size:12px;color:var(--text2);margin-bottom:4px}
+  .msg-preview{font-size:13px;color:var(--text1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .msg-trigger{font-size:10px;color:var(--gold);margin-top:5px;display:flex;align-items:center;gap:4px}
+
+  /* ── STATUS TIMELINE ── */
+  .timeline{position:relative;padding-left:20px}
+  .timeline::before{content:'';position:absolute;left:6px;top:4px;bottom:4px;width:1px;background:var(--border)}
+  .tl-item{position:relative;margin-bottom:16px}
+  .tl-dot{width:13px;height:13px;border-radius:50%;border:2px solid;position:absolute;left:-20px;top:2px;background:var(--navy2)}
+  .tl-dot.done{border-color:var(--green);background:var(--green)}
+  .tl-dot.active{border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-dim)}
+  .tl-dot.pending{border-color:var(--text3)}
+  .tl-label{font-size:13px;color:var(--text1);font-weight:500}
+  .tl-sub{font-size:11px;color:var(--text2);margin-top:2px}
+
+  /* ── DIVIDER ── */
+  .divider{height:1px;background:var(--border);margin:20px 0}
+
+  /* ── PILL TABS ── */
+  .tabs{display:flex;gap:6px;margin-bottom:20px;background:var(--panel2);padding:4px;border-radius:var(--r2);width:fit-content}
+  .tab{padding:6px 16px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;color:var(--text2);transition:all .18s;font-family:'Syne',sans-serif}
+  .tab.active{background:var(--gold-dim);color:var(--gold);border:1px solid rgba(212,168,83,0.3)}
+
+  /* ── UPLOAD ZONE ── */
+  .upload-zone{border:2px dashed var(--border);border-radius:var(--r);padding:32px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:16px}
+  .upload-zone:hover{border-color:var(--gold);background:var(--gold-dim)}
+  .upload-icon{font-size:32px;margin-bottom:10px}
+  .upload-label{font-size:14px;color:var(--text1);font-weight:500}
+  .upload-sub{font-size:12px;color:var(--text2);margin-top:4px}
+
+  /* ── STRENGTH BAR ── */
+  .strength-bar{display:flex;gap:4px;margin-top:6px}
+  .strength-seg{flex:1;height:3px;border-radius:2px;background:var(--glass2)}
+  .strength-seg.fill-red{background:var(--red)}
+  .strength-seg.fill-gold{background:var(--gold)}
+  .strength-seg.fill-green{background:var(--green)}
+
+  /* ── HEADER PULSE INDICATOR ── */
+  .heartbeat-bar{display:flex;align-items:center;gap:6px;padding:6px 12px;background:var(--green-dim);border:1px solid rgba(45,212,160,0.2);border-radius:20px;font-size:11px;color:var(--green);font-weight:600}
+  .hb-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 1.5s infinite}
+</style>
+
+<div class="shell">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="logo-area">
+      <div class="logo">
+        <div class="logo-icon">⬡</div>
+        <div>
+          Digital Legacy
+          <div class="logo-sub">Group 16 · ABU Zaria</div>
+        </div>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <div class="nav-section">Overview</div>
+      <div class="nav-item active" onclick="show('dashboard')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </div>
+      <div class="nav-item" onclick="show('dms')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><polyline points="12 6 12 12 15 15"/></svg>
+        Dead Man's Switch
+      </div>
+
+      <div class="nav-section">Assets</div>
+      <div class="nav-item" onclick="show('vault')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Encrypted Vault
+      </div>
+      <div class="nav-item" onclick="show('messages')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Legacy Messages
+      </div>
+
+      <div class="nav-section">People</div>
+      <div class="nav-item" onclick="show('beneficiaries')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Beneficiaries
+      </div>
+      <div class="nav-item" onclick="show('notifications')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        Notifications
+      </div>
+
+      <div class="nav-section">System</div>
+      <div class="nav-item" onclick="show('settings')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Settings
+      </div>
+      <div class="nav-item" onclick="show('audit')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Audit Log
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-pill">
+        <div class="avatar">AA</div>
+        <div>
+          <div class="user-name">Usman A.</div>
+          <div class="user-role">Account Owner</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main">
+
+    <!-- ═══ DASHBOARD ═══ -->
+    <div class="screen active" id="screen-dashboard">
+      <div class="topbar">
+        <div>
+          <div class="page-title">Dashboard</div>
+          <div class="page-sub">Welcome back — your legacy is protected</div>
+        </div>
+        <div class="topbar-right">
+          <div class="heartbeat-bar">
+            <div class="hb-dot"></div>
+            Heartbeat active
+          </div>
+          <button class="btn btn-gold" onclick="show('vault')">+ Add Asset</button>
+        </div>
+      </div>
+
+      <!-- STATS -->
+      <div class="stats">
+        <div class="stat-card">
+          <div class="stat-label">Vault Assets</div>
+          <div class="stat-value">24</div>
+          <span class="stat-badge badge-blue">12 documents · 8 photos</span>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Beneficiaries</div>
+          <div class="stat-value">4</div>
+          <span class="stat-badge badge-green">All verified</span>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">DMS Status</div>
+          <div class="stat-value" style="color:var(--green);font-size:18px;margin-top:10px">MONITORING</div>
+          <span class="stat-badge badge-green">68 days remaining</span>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Legacy Messages</div>
+          <div class="stat-value">7</div>
+          <span class="stat-badge badge-gold">3 scheduled</span>
+        </div>
+      </div>
+
+      <div class="grid2">
+        <!-- DMS OVERVIEW -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Dead Man's Switch</div>
+              <div class="card-sub">Inactivity threshold: 90 days</div>
+            </div>
+            <button class="btn btn-ghost" onclick="show('dms')" style="font-size:12px">Configure</button>
+          </div>
+          <div class="dms-row">
+            <div class="dms-ring">
+              <svg viewBox="0 0 140 140">
+                <circle cx="70" cy="70" r="56" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="10"/>
+                <circle cx="70" cy="70" r="56" fill="none" stroke="#2dd4a0" stroke-width="10"
+                  stroke-dasharray="351.86" stroke-dashoffset="113" stroke-linecap="round"
+                  transform="rotate(-90 70 70)" opacity=".9"/>
+              </svg>
+              <div class="dms-ring-inner">
+                <div class="dms-pct">68%</div>
+                <div class="dms-days">days left</div>
+              </div>
+            </div>
+            <div class="dms-info">
+              <div class="dms-status"><div class="dms-dot"></div>Monitoring</div>
+              <div style="font-size:13px;color:var(--text2);line-height:1.6">Last activity <span style="color:var(--text1);font-weight:500">2 hours ago</span><br>Cooling-off period: <span style="color:var(--text1);font-weight:500">14 days</span></div>
+              <div class="dms-threshold">
+                <div class="dms-threshold-label">Inactivity progress (22 / 90 days)</div>
+                <div class="track"><div class="track-fill" style="width:24%"></div></div>
+                <div class="track-markers">
+                  <span class="track-marker">0d</span>
+                  <span class="track-marker" style="color:var(--gold)">75% warn</span>
+                  <span class="track-marker" style="color:var(--red)">90d</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RECENT ACTIVITY -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Recent Activity</div>
+            <button class="btn btn-ghost" onclick="show('audit')" style="font-size:12px">View log</button>
+          </div>
+          <div>
+            <div class="activity-item">
+              <div class="act-dot" style="background:var(--green)"></div>
+              <div>
+                <div class="act-text">Heartbeat registered — web app</div>
+                <div class="act-time">2 hours ago</div>
+              </div>
+            </div>
+            <div class="activity-item">
+              <div class="act-dot" style="background:var(--blue)"></div>
+              <div>
+                <div class="act-text">File uploaded: <em>Will_2026.pdf</em></div>
+                <div class="act-time">Yesterday, 3:14 PM</div>
+              </div>
+            </div>
+            <div class="activity-item">
+              <div class="act-dot" style="background:var(--gold)"></div>
+              <div>
+                <div class="act-text">Beneficiary <em>Sultana X.</em> verified</div>
+                <div class="act-time">2 days ago</div>
+              </div>
+            </div>
+            <div class="activity-item">
+              <div class="act-dot" style="background:var(--blue)"></div>
+              <div>
+                <div class="act-text">MFA confirmed — TOTP login</div>
+                <div class="act-time">3 days ago</div>
+              </div>
+            </div>
+            <div class="activity-item">
+              <div class="act-dot" style="background:var(--text3)"></div>
+              <div>
+                <div class="act-text">DMS threshold updated to 90 days</div>
+                <div class="act-time">1 week ago</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- QUICK VAULT PREVIEW -->
+      <div class="card" style="margin-top:0">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Recent Vault Items</div>
+            <div class="card-sub">AES-256-GCM encrypted · 24 assets</div>
+          </div>
+          <button class="btn btn-ghost" onclick="show('vault')" style="font-size:12px">Open vault</button>
+        </div>
+        <div class="vault-grid">
+          <div class="vault-item"><div class="vault-item-icon vi-doc">📄</div><div class="vi-enc">AES-256</div><div class="vi-name">Will_2026_Final.pdf</div><div class="vi-size">2.4 MB · PDF</div></div>
+          <div class="vault-item"><div class="vault-item-icon vi-key">🔑</div><div class="vi-enc">AES-256</div><div class="vi-name">BTC_Wallet_Seed.txt</div><div class="vi-size">1.1 KB · TXT</div></div>
+          <div class="vault-item"><div class="vault-item-icon vi-img">🖼️</div><div class="vi-enc">AES-256</div><div class="vi-name">Family_Photo_2024.jpg</div><div class="vi-size">4.8 MB · JPG</div></div>
+          <div class="vault-item"><div class="vault-item-icon vi-doc">📄</div><div class="vi-enc">AES-256</div><div class="vi-name">Bank_Credentials.pdf</div><div class="vi-size">890 KB · PDF</div></div>
+          <div class="vault-item"><div class="vault-item-icon vi-voice">🎙️</div><div class="vi-enc">AES-256</div><div class="vi-name">Voice_Message_Kids.m4a</div><div class="vi-size">12.3 MB · Audio</div></div>
+          <div class="vault-item" style="border:2px dashed var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;min-height:90px" onclick="show('vault')">
+            <div style="font-size:22px;color:var(--text3)">+</div>
+            <div style="font-size:12px;color:var(--text3);margin-top:4px">Add asset</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ DMS SCREEN ═══ -->
+    <div class="screen" id="screen-dms">
+      <div class="topbar">
+        <div>
+          <div class="page-title">Dead Man's Switch</div>
+          <div class="page-sub">Automated inactivity-based asset release system</div>
+        </div>
+        <div class="topbar-right">
+          <button class="btn btn-gold">Send Heartbeat</button>
+        </div>
+      </div>
+
+      <div class="grid2">
+        <div>
+          <!-- STATE MACHINE -->
+          <div class="card">
+            <div class="card-header"><div class="card-title">Current State</div></div>
+            <div class="timeline">
+              <div class="tl-item">
+                <div class="tl-dot done"></div>
+                <div class="tl-label">MONITORING</div>
+                <div class="tl-sub">Active — last heartbeat 2 hours ago</div>
+              </div>
+              <div class="tl-item">
+                <div class="tl-dot active"></div>
+                <div class="tl-label" style="color:var(--gold)">ALERT_75 <span style="font-size:11px;font-weight:400;color:var(--text2)">at day 67</span></div>
+                <div class="tl-sub">First email + SMS warning sent to you</div>
+              </div>
+              <div class="tl-item">
+                <div class="tl-dot pending"></div>
+                <div class="tl-label" style="color:var(--text3)">ALERT_90 <span style="font-size:11px">at day 81</span></div>
+                <div class="tl-sub">Escalated warning — final chance to reset</div>
+              </div>
+              <div class="tl-item">
+                <div class="tl-dot pending"></div>
+                <div class="tl-label" style="color:var(--text3)">COOLING_OFF <span style="font-size:11px">at day 90</span></div>
+                <div class="tl-sub">14-day final window — you can still cancel</div>
+              </div>
+              <div class="tl-item" style="margin-bottom:0">
+                <div class="tl-dot pending"></div>
+                <div class="tl-label" style="color:var(--text3)">RELEASED <span style="font-size:11px">at day 104</span></div>
+                <div class="tl-sub">Assets delivered to beneficiaries</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CANCEL BUTTON -->
+          <div class="card" style="background:rgba(240,106,106,0.06);border-color:rgba(240,106,106,0.2)">
+            <div class="card-title" style="color:var(--red);margin-bottom:8px">Emergency Cancel</div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:14px">If the cooling-off period has started, you can cancel it here. This will immediately reset the DMS to MONITORING status.</div>
+            <button class="btn btn-danger">Cancel Cooling-Off Period</button>
+          </div>
+        </div>
+
+        <div>
+          <!-- CONFIGURE -->
+          <div class="card">
+            <div class="card-header"><div class="card-title">Configure Thresholds</div></div>
+            <div class="form-group">
+              <label class="form-label">Inactivity threshold (days)</label>
+              <div class="range-row">
+                <input type="range" min="30" max="365" value="90" id="thresh-range" oninput="document.getElementById('thresh-val').textContent=this.value+'d'">
+                <div class="range-val" id="thresh-val">90d</div>
+              </div>
+              <div style="display:flex;justify-content:space-between;margin-top:4px">
+                <span style="font-size:10px;color:var(--text3)">30 days</span>
+                <span style="font-size:10px;color:var(--text3)">365 days</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Cooling-off period (days)</label>
+              <div class="range-row">
+                <input type="range" min="7" max="60" value="14" id="cool-range" oninput="document.getElementById('cool-val').textContent=this.value+'d'">
+                <div class="range-val" id="cool-val">14d</div>
+              </div>
+            </div>
+            <div class="divider"></div>
+            <div class="form-group">
+              <label class="form-label">Notification channels</label>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text1)">
+                  <input type="checkbox" checked style="accent-color:var(--gold)"> Email (noreply@digitallegacy.ng)
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text1)">
+                  <input type="checkbox" checked style="accent-color:var(--gold)"> SMS (+23480XXXXXXXXX)
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text1)">
+                  <input type="checkbox" style="accent-color:var(--gold)"> Push notification (mobile app)
+                </div>
+              </div>
+            </div>
+            <button class="btn btn-gold" style="width:100%;justify-content:center">Save Configuration</button>
+          </div>
+
+          <!-- HEARTBEAT HISTORY -->
+          <div class="card">
+            <div class="card-header"><div class="card-title">Recent Heartbeats</div></div>
+            <div class="activity-item">
+              <div class="act-dot" style="background:var(--green)"></div>
+              <div><div class="act-text">Web app login</div><div class="act-time">Today, 10:34 AM</div></div>
+            </div>
+            <div class="activity-item">
+              <div class="act-dot" style="background:var(--blue)"></div>
+              <div><div class="act-text">Mobile background heartbeat</div><div class="act-time">Yesterday, 2:11 AM</div></div>
+            </div>
+            <div class="activity-item">
+              <div class="act-dot" style="background:var(--blue)"></div>
+              <div><div class="act-text">Mobile background heartbeat</div><div class="act-time">2 days ago, 2:09 AM</div></div>
+            </div>
+            <div class="activity-item" style="border:none">
+              <div class="act-dot" style="background:var(--green)"></div>
+              <div><div class="act-text">Web app — vault access</div><div class="act-time">3 days ago, 6:50 PM</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ VAULT SCREEN ═══ -->
+    <div class="screen" id="screen-vault">
+      <div class="topbar">
+        <div>
+          <div class="page-title">Encrypted Vault</div>
+          <div class="page-sub">24 assets · AES-256-GCM · AWS KMS</div>
+        </div>
+        <div class="topbar-right">
+          <button class="btn btn-ghost">Filter</button>
+          <button class="btn btn-gold">+ Upload Asset</button>
+        </div>
+      </div>
+
+      <!-- UPLOAD ZONE -->
+      <div class="upload-zone">
+        <div class="upload-icon">🔒</div>
+        <div class="upload-label">Drop files to encrypt and upload</div>
+        <div class="upload-sub">PDF, JPG, PNG, MP3, TXT — max 100MB per file</div>
+      </div>
+
+      <!-- TABS -->
+      <div class="tabs">
+        <div class="tab active">All (24)</div>
+        <div class="tab">Documents (12)</div>
+        <div class="tab">Photos (8)</div>
+        <div class="tab">Audio (3)</div>
+        <div class="tab">Other (1)</div>
+      </div>
+
+      <div class="vault-grid" style="grid-template-columns:repeat(4,1fr)">
+        <div class="vault-item"><div class="vault-item-icon vi-doc">📄</div><div class="vi-enc">AES-256</div><div class="vi-name">Will_2026_Final.pdf</div><div class="vi-size">2.4 MB · 3 days ago</div></div>
+        <div class="vault-item"><div class="vault-item-icon vi-key">🔑</div><div class="vi-enc">AES-256</div><div class="vi-name">BTC_Wallet_Seed.txt</div><div class="vi-size">1.1 KB · 1 week ago</div></div>
+        <div class="vault-item"><div class="vault-item-icon vi-img">🖼️</div><div class="vi-enc">AES-256</div><div class="vi-name">Family_Photo_2024.jpg</div><div class="vi-size">4.8 MB · 2 weeks ago</div></div>
+        <div class="vault-item"><div class="vault-item-icon vi-doc">📄</div><div class="vi-enc">AES-256</div><div class="vi-name">Bank_Credentials.pdf</div><div class="vi-size">890 KB · 2 weeks ago</div></div>
+        <div class="vault-item"><div class="vault-item-icon vi-voice">🎙️</div><div class="vi-enc">AES-256</div><div class="vi-name">Voice_Message_Kids.m4a</div><div class="vi-size">12.3 MB · 1 month ago</div></div>
+        <div class="vault-item"><div class="vault-item-icon vi-doc">📄</div><div class="vi-enc">AES-256</div><div class="vi-name">Insurance_Policy.pdf</div><div class="vi-size">1.7 MB · 1 month ago</div></div>
+        <div class="vault-item"><div class="vault-item-icon vi-img">🖼️</div><div class="vi-enc">AES-256</div><div class="vi-name">Wedding_2019.jpg</div><div class="vi-size">6.2 MB · 1 month ago</div></div>
+        <div class="vault-item"><div class="vault-item-icon vi-doc">📄</div><div class="vi-enc">AES-256</div><div class="vi-name">Land_Title_Deed.pdf</div><div class="vi-size">3.1 MB · 2 months ago</div></div>
+      </div>
+    </div>
+
+    <!-- ═══ MESSAGES SCREEN ═══ -->
+    <div class="screen" id="screen-messages">
+      <div class="topbar">
+        <div>
+          <div class="page-title">Legacy Messages</div>
+          <div class="page-sub">Compose messages delivered to heirs upon release</div>
+        </div>
+        <button class="btn btn-gold">+ New Message</button>
+      </div>
+
+      <div class="grid2">
+        <div>
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Saved Messages</div>
+              <span class="stat-badge badge-gold">7 total</span>
+            </div>
+            <div class="message-card">
+              <div class="msg-recipient">To: Sultana X. (Wife)</div>
+              <div class="msg-preview">My dearest Sultana, if you are reading this then I want you to know...</div>
+              <div class="msg-trigger">⏰ Trigger: On inactivity release</div>
+            </div>
+            <div class="message-card">
+              <div class="msg-recipient">To: Muhammad Auwal (Son)</div>
+              <div class="msg-preview">Muhammad, you have always made me proud. Here is the advice I want to leave...</div>
+              <div class="msg-trigger">⏰ Trigger: On inactivity release</div>
+            </div>
+            <div class="message-card">
+              <div class="msg-recipient">To: All Beneficiaries</div>
+              <div class="msg-preview">The vault access instructions are attached. Please contact Lawyer Usman...</div>
+              <div class="msg-trigger">📅 Trigger: Scheduled — 01 Jan 2027</div>
+            </div>
+            <div class="message-card">
+              <div class="msg-recipient">To: Fatima Usman (Sister)</div>
+              <div class="msg-preview">Fatima, the family photos in the vault are yours. Password is Mama's birthday...</div>
+              <div class="msg-trigger">⏰ Trigger: On inactivity release</div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Compose New Message</div></div>
+            <div class="form-group">
+              <label class="form-label">Recipient (Beneficiary)</label>
+              <select class="form-select">
+                <option>Sultana X — Wife</option>
+                <option>Muhammad Auwal — Son</option>
+                <option>Fatima Usman— Sister</option>
+                <option>All Beneficiaries</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Subject</label>
+              <input type="text" class="form-input" placeholder="A message from me...">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Message</label>
+              <textarea class="form-input" rows="5" style="resize:vertical" placeholder="Write your message here. It will be encrypted with AES-256-GCM and only decrypted upon release."></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Delivery trigger</label>
+              <select class="form-select">
+                <option>On inactivity release (Dead Man's Switch)</option>
+                <option>On a specific scheduled date</option>
+              </select>
+            </div>
+            <button class="btn btn-gold" style="width:100%;justify-content:center">Save & Encrypt Message</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ BENEFICIARIES ═══ -->
+    <div class="screen" id="screen-beneficiaries">
+      <div class="topbar">
+        <div>
+          <div class="page-title">Beneficiaries</div>
+          <div class="page-sub">4 heirs · All identity-verified</div>
+        </div>
+        <button class="btn btn-gold">+ Add Beneficiary</button>
+      </div>
+
+      <div class="grid2">
+        <div class="card">
+          <div class="card-header"><div class="card-title">Registered Heirs</div></div>
+          <div class="bene-item">
+            <div class="bene-avatar" style="background:rgba(212,168,83,0.2);color:var(--gold)">FA</div>
+            <div class="bene-info">
+              <div class="bene-name">Sultana X.</div>
+              <div class="bene-rel">Wife · Sultana@example.com</div>
+              <div class="bene-perms">
+                <span class="perm-tag">Full Access</span>
+              </div>
+            </div>
+            <span class="stat-badge badge-green">Verified</span>
+          </div>
+          <div class="bene-item">
+            <div class="bene-avatar" style="background:rgba(91,156,246,0.2);color:var(--blue)">IA</div>
+            <div class="bene-info">
+              <div class="bene-name">Muhammad Auwal</div>
+              <div class="bene-rel">Son · Muhammad@example.com</div>
+              <div class="bene-perms">
+                <span class="perm-tag">Documents</span>
+                <span class="perm-tag">Messages</span>
+              </div>
+            </div>
+            <span class="stat-badge badge-green">Verified</span>
+          </div>
+          <div class="bene-item">
+            <div class="bene-avatar" style="background:rgba(45,212,160,0.2);color:var(--green)">AM</div>
+            <div class="bene-info">
+              <div class="bene-name">Fatima Usman</div>
+              <div class="bene-rel">Sister · Fatima@example.com</div>
+              <div class="bene-perms">
+                <span class="perm-tag">Photos</span>
+                <span class="perm-tag">Messages</span>
+              </div>
+            </div>
+            <span class="stat-badge badge-green">Verified</span>
+          </div>
+          <div class="bene-item" style="border:none">
+            <div class="bene-avatar" style="background:rgba(240,106,106,0.2);color:var(--red)">KA</div>
+            <div class="bene-info">
+              <div class="bene-name">Abdulrazaq Usman</div>
+              <div class="bene-rel">Brother · Abdulrazaq@example.com</div>
+              <div class="bene-perms">
+                <span class="perm-tag">Messages</span>
+              </div>
+            </div>
+            <span class="stat-badge badge-gold">Pending</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><div class="card-title">Add New Beneficiary</div></div>
+          <div class="form-group">
+            <label class="form-label">Full name</label>
+            <input type="text" class="form-input" placeholder="e.g. Sultana x.">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email address</label>
+            <input type="email" class="form-input" placeholder="heir@example.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Phone number</label>
+            <input type="text" class="form-input" placeholder="+234 80XXXXXXXXXX">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Relationship</label>
+            <select class="form-select">
+              <option>Spouse</option><option>Child</option><option>Parent</option><option>Sibling</option><option>Lawyer</option><option>Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Access permissions</label>
+            <div style="display:flex;flex-direction:column;gap:7px;margin-top:4px">
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text1);cursor:pointer"><input type="checkbox" checked style="accent-color:var(--gold)"> Documents</label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text1);cursor:pointer"><input type="checkbox" style="accent-color:var(--gold)"> Photos & memories</label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text1);cursor:pointer"><input type="checkbox" checked style="accent-color:var(--gold)"> Legacy messages</label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text1);cursor:pointer"><input type="checkbox" style="accent-color:var(--gold)"> Full vault access</label>
+            </div>
+          </div>
+          <button class="btn btn-gold" style="width:100%;justify-content:center">Add & Send Invitation</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ NOTIFICATIONS ═══ -->
+    <div class="screen" id="screen-notifications">
+      <div class="topbar">
+        <div>
+          <div class="page-title">Notifications</div>
+          <div class="page-sub">Email · SMS · Push — multi-channel alerts</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Notification History</div></div>
+        <div class="notif-item">
+          <div class="notif-icon" style="background:var(--green-dim)">✅</div>
+          <div class="notif-body">
+            <div class="notif-title">Heartbeat confirmed</div>
+            <div class="notif-msg">Your proof-of-life signal was received and your DMS timer has been reset.</div>
+            <div class="notif-time">Today, 10:34 AM · Email + SMS</div>
+          </div>
+          <span class="stat-badge badge-green" style="flex-shrink:0">Delivered</span>
+        </div>
+        <div class="notif-item">
+          <div class="notif-icon" style="background:var(--blue-dim)">🔒</div>
+          <div class="notif-body">
+            <div class="notif-title">New asset encrypted and stored</div>
+            <div class="notif-msg">Will_2026_Final.pdf has been securely uploaded and encrypted in your vault.</div>
+            <div class="notif-time">Yesterday, 3:14 PM · Email</div>
+          </div>
+          <span class="stat-badge badge-green" style="flex-shrink:0">Delivered</span>
+        </div>
+        <div class="notif-item">
+          <div class="notif-icon" style="background:var(--gold-dim)">👤</div>
+          <div class="notif-body">
+            <div class="notif-title">Beneficiary identity verified</div>
+            <div class="notif-msg">Sultana X. has successfully verified her identity and is now a confirmed heir.</div>
+            <div class="notif-time">2 days ago · Email + SMS</div>
+          </div>
+          <span class="stat-badge badge-green" style="flex-shrink:0">Delivered</span>
+        </div>
+        <div class="notif-item">
+          <div class="notif-icon" style="background:var(--red-dim)">⚠️</div>
+          <div class="notif-body">
+            <div class="notif-title">Security alert — new login detected</div>
+            <div class="notif-msg">A new login was detected from Abuja, Nigeria. If this was not you, secure your account immediately.</div>
+            <div class="notif-time">5 days ago · Email + SMS</div>
+          </div>
+          <span class="stat-badge badge-green" style="flex-shrink:0">Delivered</span>
+        </div>
+        <div class="notif-item" style="border:none">
+          <div class="notif-icon" style="background:rgba(255,255,255,0.06)">📬</div>
+          <div class="notif-body">
+            <div class="notif-title">Beneficiary invitation sent</div>
+            <div class="notif-msg">An invitation email was sent to Abdulrazaq Usman to verify his identity as a beneficiary.</div>
+            <div class="notif-time">1 week ago · Email</div>
+          </div>
+          <span class="stat-badge badge-gold" style="flex-shrink:0">Pending</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ SETTINGS ═══ -->
+    <div class="screen" id="screen-settings">
+      <div class="topbar">
+        <div>
+          <div class="page-title">Settings</div>
+          <div class="page-sub">Account security and application preferences</div>
+        </div>
+      </div>
+
+      <div class="grid2">
+        <div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Security</div></div>
+            <div class="settings-section">
+              <div class="settings-row">
+                <div><div class="settings-label">Multi-Factor Authentication</div><div class="settings-desc">TOTP via Google Authenticator</div></div>
+                <div class="toggle on" onclick="this.classList.toggle('on');this.classList.toggle('off')"><div class="toggle-thumb"></div></div>
+              </div>
+              <div class="settings-row">
+                <div><div class="settings-label">Login notifications</div><div class="settings-desc">Email alert on every new login</div></div>
+                <div class="toggle on" onclick="this.classList.toggle('on');this.classList.toggle('off')"><div class="toggle-thumb"></div></div>
+              </div>
+              <div class="settings-row">
+                <div><div class="settings-label">Session timeout</div><div class="settings-desc">Auto-logout after inactivity</div></div>
+                <div class="toggle on" onclick="this.classList.toggle('on');this.classList.toggle('off')"><div class="toggle-thumb"></div></div>
+              </div>
+            </div>
+            <div class="divider"></div>
+            <div class="form-group">
+              <label class="form-label">Change password</label>
+              <input type="password" class="form-input" placeholder="Current password" style="margin-bottom:8px">
+              <input type="password" class="form-input" placeholder="New password (min 12 chars)" style="margin-bottom:8px">
+              <input type="password" class="form-input" placeholder="Confirm new password">
+              <div class="strength-bar" style="margin-top:8px">
+                <div class="strength-seg fill-green"></div>
+                <div class="strength-seg fill-green"></div>
+                <div class="strength-seg fill-green"></div>
+                <div class="strength-seg fill-gold"></div>
+                <div class="strength-seg"></div>
+              </div>
+              <div style="font-size:11px;color:var(--gold);margin-top:4px">Strong — add a symbol for maximum strength</div>
+            </div>
+            <button class="btn btn-ghost" style="width:100%;justify-content:center">Update Password</button>
+          </div>
+        </div>
+
+        <div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Profile</div></div>
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px">
+              <div class="avatar" style="width:52px;height:52px;font-size:18px">AA</div>
+              <div>
+                <div style="font-size:14px;font-weight:600;color:var(--text1)">Usman A.</div>
+                <div style="font-size:12px;color:var(--text2);margin-top:2px">Auwal@example.com</div>
+                <span class="stat-badge badge-green" style="margin-top:5px">Email verified</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">First name</label>
+              <input type="text" class="form-input" value="Auwal">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Last name</label>
+              <input type="text" class="form-input" value="Usman">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Phone number</label>
+              <input type="text" class="form-input" value="+234 80XXXXXXXX">
+            </div>
+            <button class="btn btn-gold" style="width:100%;justify-content:center">Save Profile</button>
+          </div>
+
+          <div class="card" style="background:rgba(240,106,106,0.05);border-color:rgba(240,106,106,0.2)">
+            <div class="card-title" style="color:var(--red);margin-bottom:8px">Danger Zone</div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6">Deleting your account will permanently remove all vault assets and beneficiary records. This cannot be undone.</div>
+            <button class="btn btn-danger">Delete My Account</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ AUDIT LOG ═══ -->
+    <div class="screen" id="screen-audit">
+      <div class="topbar">
+        <div>
+          <div class="page-title">Audit Log</div>
+          <div class="page-sub">Immutable append-only record of all system events</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">System Events</div><span class="stat-badge badge-gray">Append-only · Cannot be modified</span></div>
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead>
+            <tr style="border-bottom:1px solid var(--border)">
+              <th style="text-align:left;padding:8px 10px;color:var(--text2);font-weight:500;font-family:'Syne',sans-serif;font-size:11px;letter-spacing:.5px">TIMESTAMP</th>
+              <th style="text-align:left;padding:8px 10px;color:var(--text2);font-weight:500;font-family:'Syne',sans-serif;font-size:11px;letter-spacing:.5px">ACTION</th>
+              <th style="text-align:left;padding:8px 10px;color:var(--text2);font-weight:500;font-family:'Syne',sans-serif;font-size:11px;letter-spacing:.5px">RESOURCE</th>
+              <th style="text-align:left;padding:8px 10px;color:var(--text2);font-weight:500;font-family:'Syne',sans-serif;font-size:11px;letter-spacing:.5px">RESULT</th>
+              <th style="text-align:left;padding:8px 10px;color:var(--text2);font-weight:500;font-family:'Syne',sans-serif;font-size:11px;letter-spacing:.5px">IP HASH</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom:1px solid var(--border)"><td style="padding:9px 10px;color:var(--text2)">2026-03-01 10:34</td><td style="padding:9px 10px;color:var(--text1)">dms.heartbeat</td><td style="padding:9px 10px;color:var(--text2)">dms_configs</td><td style="padding:9px 10px"><span class="stat-badge badge-green">SUCCESS</span></td><td style="padding:9px 10px;color:var(--text3);font-family:monospace">a3f9…e12b</td></tr>
+            <tr style="border-bottom:1px solid var(--border)"><td style="padding:9px 10px;color:var(--text2)">2026-02-28 15:14</td><td style="padding:9px 10px;color:var(--text1)">vault.upload</td><td style="padding:9px 10px;color:var(--text2)">vault_items</td><td style="padding:9px 10px"><span class="stat-badge badge-green">SUCCESS</span></td><td style="padding:9px 10px;color:var(--text3);font-family:monospace">a3f9…e12b</td></tr>
+            <tr style="border-bottom:1px solid var(--border)"><td style="padding:9px 10px;color:var(--text2)">2026-02-27 09:22</td><td style="padding:9px 10px;color:var(--text1)">beneficiary.verify</td><td style="padding:9px 10px;color:var(--text2)">beneficiaries</td><td style="padding:9px 10px"><span class="stat-badge badge-green">SUCCESS</span></td><td style="padding:9px 10px;color:var(--text3);font-family:monospace">b7c2…a94f</td></tr>
+            <tr style="border-bottom:1px solid var(--border)"><td style="padding:9px 10px;color:var(--text2)">2026-02-26 18:05</td><td style="padding:9px 10px;color:var(--text1)">auth.login</td><td style="padding:9px 10px;color:var(--text2)">users</td><td style="padding:9px 10px"><span class="stat-badge badge-red">FAILURE</span></td><td style="padding:9px 10px;color:var(--text3);font-family:monospace">d91e…5c30</td></tr>
+            <tr style="border-bottom:1px solid var(--border)"><td style="padding:9px 10px;color:var(--text2)">2026-02-26 18:06</td><td style="padding:9px 10px;color:var(--text1)">auth.login</td><td style="padding:9px 10px;color:var(--text2)">users</td><td style="padding:9px 10px"><span class="stat-badge badge-green">SUCCESS</span></td><td style="padding:9px 10px;color:var(--text3);font-family:monospace">d91e…5c30</td></tr>
+            <tr style="border-bottom:1px solid var(--border)"><td style="padding:9px 10px;color:var(--text2)">2026-02-25 11:40</td><td style="padding:9px 10px;color:var(--text1)">dms.config.update</td><td style="padding:9px 10px;color:var(--text2)">dms_configs</td><td style="padding:9px 10px"><span class="stat-badge badge-green">SUCCESS</span></td><td style="padding:9px 10px;color:var(--text3);font-family:monospace">a3f9…e12b</td></tr>
+            <tr><td style="padding:9px 10px;color:var(--text2)">2026-02-20 08:30</td><td style="padding:9px 10px;color:var(--text1)">auth.register</td><td style="padding:9px 10px;color:var(--text2)">users</td><td style="padding:9px 10px"><span class="stat-badge badge-green">SUCCESS</span></td><td style="padding:9px 10px;color:var(--text3);font-family:monospace">a3f9…e12b</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  var screen=document.getElementById('screen-'+id);
+  if(screen) screen.classList.add('active');
+  var items=document.querySelectorAll('.nav-item');
+  items.forEach(function(item){
+    if(item.getAttribute('onclick') && item.getAttribute('onclick').includes("'"+id+"'")){
+      item.classList.add('active');
+    }
+  });
+}
+</script>

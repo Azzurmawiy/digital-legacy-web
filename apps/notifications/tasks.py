@@ -1,0 +1,76 @@
+from celery import shared_task
+from django.core.mail import send_mail
+from django.conf import settings
+from django.utils import timezone
+from .models import Notification
+
+@shared_task
+def send_email_notification(user_id, subject, message):
+    """
+    Async task to send an email notification and log it.
+    """
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+    
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return
+        
+    notification = Notification.objects.create(
+        user=user,
+        channel=Notification.Channel.EMAIL,
+        subject=subject,
+        message=message
+    )
+    
+    try:
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[user.email],
+            fail_silently=False,
+        )
+        notification.status = Notification.Status.SENT
+        notification.sent_at = timezone.now()
+        notification.save(update_fields=['status', 'sent_at'])
+    except Exception as e:
+        notification.status = Notification.Status.FAILED
+        notification.error_message = str(e)
+        notification.save(update_fields=['status', 'error_message'])
+
+@shared_task
+def send_sms_notification(user_id, message):
+    """
+    Async task to send an SMS notification and log it.
+    """
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+    
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return
+        
+    notification = Notification.objects.create(
+        user=user,
+        channel=Notification.Channel.SMS,
+        message=message
+    )
+    
+    # Mock SMS sending - replace with Twilio integration later
+    if user.phone:
+        try:
+            # Twilio logic here
+            notification.status = Notification.Status.SENT
+            notification.sent_at = timezone.now()
+            notification.save(update_fields=['status', 'sent_at'])
+        except Exception as e:
+            notification.status = Notification.Status.FAILED
+            notification.error_message = str(e)
+            notification.save(update_fields=['status', 'error_message'])
+    else:
+        notification.status = Notification.Status.FAILED
+        notification.error_message = "No phone number available."
+        notification.save(update_fields=['status', 'error_message'])
