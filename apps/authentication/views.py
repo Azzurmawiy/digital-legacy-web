@@ -24,10 +24,16 @@ class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
     permission_classes = [AllowAny]
+    authentication_classes = []
 
     def perform_create(self, serializer):
         user = serializer.save()
-        self.send_otp(user)
+        if settings.DEBUG:
+            user.is_active = True
+            user.is_email_verified = True
+            user.save()
+        else:
+            self.send_otp(user)
         return user
 
     def send_otp(self, user):
@@ -48,6 +54,7 @@ class RegisterView(generics.CreateAPIView):
 class VerifyOTPView(generics.GenericAPIView):
     serializer_class = OTPVerifySerializer
     permission_classes = [AllowAny]
+    authentication_classes = []
 
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
@@ -71,6 +78,7 @@ class VerifyOTPView(generics.GenericAPIView):
 class LoginView(generics.GenericAPIView):
     serializer_class = LoginSerializer
     permission_classes = [AllowAny]
+    authentication_classes = []
 
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
@@ -285,3 +293,64 @@ class LogoutView(generics.GenericAPIView):
                 {"error": str(e)},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+
+from apps.vault.models import VaultItem
+from apps.beneficiary.models import Beneficiary
+from apps.dms.models import DMSConfig
+from rest_framework.views import APIView
+from django.db.models import Sum
+
+class DashboardStatsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        
+        # 1. Total Vault Assets (count)
+        vault_count = VaultItem.objects.filter(user=user).count()
+        
+        # 2. Total Storage (size)
+        total_size_bytes = VaultItem.objects.filter(user=user).aggregate(Sum('file_size'))['file_size__sum'] or 0
+        vault_size_mb = round(total_size_bytes / (1024 * 1024), 2)
+        
+        # 3. Verified Heirs (count)
+        heirs_count = Beneficiary.objects.filter(user=user).count()
+        
+        # 4. DMS Stats
+        try:
+            dms = DMSConfig.objects.get(user=user)
+            dms_status = dms.status
+            # Simple calculation for days left (mock for now if method doesn't exist)
+            days_left = dms.inactivity_threshold_days
+        except DMSConfig.DoesNotExist:
+            dms_status = "Inactive"
+            days_left = 0
+
+        # 5. Memories count (filtering items with image mime types)
+        memories_count = VaultItem.objects.filter(user=user, mime_type__icontains='image').count()
+
+        # 6. Recent activity from notifications
+        activity_data = []
+        try:
+            from apps.notifications.models import Notification
+            recent_notifications = Notification.objects.filter(user=user).order_by('-created_at')[:5]
+            for n in recent_notifications:
+                activity_data.append({
+                    "title": n.title,
+                    "sub": n.message[:50],
+                    "time": n.created_at.isoformat(),
+                    "icon": "🔔"
+                })
+        except ImportError:
+            pass
+
+        return Response({
+            "vault_count": vault_count,
+            "vault_size_mb": vault_size_mb,
+            "beneficiary_count": heirs_count,
+            "memories_count": memories_count,
+            "dms_status": dms_status,
+            "dms_days_left": days_left,
+            "recent_activity": activity_data
+        })

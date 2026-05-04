@@ -23,8 +23,6 @@ This document is intended for:
 - UI/UX Designers ensuring interface requirements are met.
 - Quality Assurance (QA) testers verifying functionality.
 
----
-
 ## 2. Overall Description
 
 ### 2.1 Product Perspective
@@ -51,7 +49,6 @@ The system operates as a self-contained, containerized web application utilizing
 - **Server Environment:** Docker-orchestrated environment running Linux.
 - **Client Environment:** Modern web browsers (Chrome, Firefox, Safari, Edge) on desktop, tablet, and mobile devices.
 
----
 
 ## 3. System Features & Functional Requirements
 
@@ -83,7 +80,6 @@ The system operates as a self-contained, containerized web application utilizing
 - **REQ-AUD-01:** The system shall log all significant events (logins, vault uploads, DMS config changes, heartbeat registrations).
 - **REQ-AUD-02:** Logs shall be immutable and visible to the Owner via the Security Logs dashboard.
 
----
 
 ## 4. Non-Functional Requirements
 

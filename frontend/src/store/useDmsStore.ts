@@ -46,13 +46,18 @@ export const useDmsStore = create<DmsState>((set) => ({
 
   sendHeartbeat: async () => {
     try {
-      await apiClient.post('/dms/heartbeat/', { source: 'web' });
+      await apiClient.post('/dms/heartbeat/', { source: 'WEB' });
       // Refresh config to reflect updated status
       const response = await apiClient.get('/dms/config/');
       const data = response.data?.data || response.data;
       set({ config: data });
     } catch (err: unknown) {
-      const msg = axios.isAxiosError(err) ? (err.response?.data?.error?.message || err.message) : (err instanceof Error ? err.message : 'Failed to send heartbeat');
+      let msg = 'Failed to send heartbeat';
+      if (axios.isAxiosError(err) && err.response?.data) {
+        // Extract the specific error detail if available
+        const errorData = err.response.data;
+        msg = errorData.error?.message || errorData.detail || JSON.stringify(errorData.source) || msg;
+      }
       set({ error: msg });
       toast.error(msg);
       throw err;

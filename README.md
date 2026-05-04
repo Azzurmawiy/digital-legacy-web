@@ -2,113 +2,75 @@
 ### Group 16 | Computer Engineering | Ahmadu Bello University, Zaria
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-gold.svg)](https://opensource.org/licenses/MIT)
-[![Tech: Django](https://img.shields.io/badge/Backend-Django%204.2-navy.svg)](https://www.djangoproject.com/)
+[![Tech: Django](https://img.shields.io/badge/Backend-Django%206.0-navy.svg)](https://www.djangoproject.com/)
 [![Tech: React](https://img.shields.io/badge/Frontend-React%2018-blue.svg)](https://reactjs.org/)
+[![Tech: Docker](https://img.shields.io/badge/Container-Docker-lightblue.svg)](https://www.docker.com/)
 
-A secure, military-grade digital inheritance platform designed to protect your assets and ensure they reach your loved ones when it matters most.
+**Digital Legacy** is a secure, military-grade digital inheritance platform designed to protect your assets and ensure they reach your loved ones when it matters most. It combines cutting-edge encryption with an automated "Dead Man's Switch" to bridge the gap between security and accessibility.
 
 ---
 
-## ✨ Features & Sprints
+## 🌟 Key Features
 
 ### 🌑 Premium Navy & Gold UI
-*   **Glassmorphism Design:** Modern, translucent interfaces with deep navy tones and gold accents.
-*   **Syne & DM Sans Typography:** Curated font pairings for a professional, high-end feel.
-*   **Micro-animations:** Smooth transitions and feedback loops built with CSS-in-JS patterns.
-*   **Global Notifications:** Centralized, elegant success and error toasts using `react-hot-toast`.
-*   **Modular Architecture:** Clean, highly-typed React component hierarchy enforcing strictly enforced `TypeScript` interfaces.
-*   **Fully Responsive:** Three-tier breakpoint system — full sidebar (≥1025px), icon-only sidebar (≤1024px), off-canvas drawer with hamburger toggle (≤768px).
+*   **Dynamic Dashboard:** Real-time stats on vault assets, storage usage, and heir status.
+*   **Glassmorphism Design:** Modern, high-fidelity interface with translucent deep navy tones and gold accents.
+*   **Fully Responsive:** Optimized for everything from mobile devices to large desktop monitors.
 
-### 🔐 Security & Core Functionality
-*   **Military-Grade Encryption:** Assets are secured using **AES-256-GCM** with unique data keys.
-*   **Dead Man's Switch (DMS):** Automated inactivity tracking with configurable heartbeat intervals.
-*   **Digital Vault:** Secure storage for legal documents, photos, and heartfelt legacy messages.
-*   **Beneficiary Management:** Controlled heir assignment with verifiable proof-of-identity logic.
-*   **Immutable Audit Logs:** Every sensitive action is cryptographically tracked.
+### 🔐 Security & Safety Protocols
+*   **Automated Safety Switch (DMS):** System auto-activates upon registration. Heartbeat signals reset inactivity timers to prevent accidental release.
+*   **Military-Grade Encryption:** Sensitive assets are secured using **AES-256-GCM** with unique encryption keys.
+*   **Real-Time Notifications:** SMTP-enabled alerting system (Gmail/AWS SES ready) for heartbeat reminders and system warnings.
+*   **Verified Heir Management:** Secure beneficiary assignment with identity verification logic.
+
+### 📂 Digital Vault
+*   **Asset Management:** Secure storage for legal documents, passwords, and sensitive credentials.
+*   **Memories:** A dedicated space for photos and heartfelt legacy messages.
+*   **Storage Tracking:** Automated tracking of file sizes and storage limits.
 
 ---
 
-## 🚀 Fast Track (Docker — Recommended)
+## 🚀 Quick Start (Docker)
 
-The easiest way to run the entire platform (Backend + Frontend + DB + Redis) is using Docker.
+The easiest way to run the entire stack (Backend + Frontend + DB + Redis) is using Docker.
 
-### 1. Prerequisites
-*   **Docker Desktop** (WSL 2 backend recommended for Windows)
-*   **Hardware Tip:** For smooth performance, ensure WSL 2 has at least 4GB RAM allocated in `.wslconfig`.
-
-### 2. Launching the App
-```powershell
-# 1. Setup environment
+### 1. Setup Environment
+```bash
 cp .env.example .env
-
-# 2. Build and Start everything
-docker-compose up --build
+# Edit .env with your specific keys
 ```
 
-### 3. Initialize System
-Once the containers are healthy:
-```powershell
-# Run Migrations
-docker-compose exec api python manage.py migrate
+### 2. Launch Services
+```bash
+docker-compose up --build -d
+```
 
-# Create Admin Account
+### 3. Initialize Database
+```bash
+docker-compose exec api python manage.py migrate
 docker-compose exec api python manage.py createsuperuser
 ```
 
-*   **Frontend Dashboard:** [http://localhost:5173](http://localhost:5173)
-*   **API Documentation:** [http://localhost:8000/api/docs/](http://localhost:8000/api/docs/)
+*   **Frontend:** [http://localhost:5173](http://localhost:5173)
+*   **API Docs:** [http://localhost:8000/api/docs/](http://localhost:8000/api/docs/)
 
 ---
 
-## 📂 Project Architecture
+## 📂 Architecture
 
 ```bash
 digital-legacy-web/
-├── apps/               # Django Modules (Auth, Vault, DMS, Beneficiaries)
-├── core/               # Shared logic (Security, Middleware, Base Classes)
-├── frontend/           # React + Vite + Premium Custom CSS
-│   ├── src/components/ # UI Components (Vault, VaultItemCard, VaultUploadForm,
-│   │                   #   Memories, DMSConfig, Sidebar, Dashboard...)
-│   ├── src/store/      # Zustand stores with typed API + toast error handling
-│   └── src/index.css   # Navy & Gold Design System + responsive breakpoints
-├── config/             # Project settings (Celery, JWT, URL Routing)
-└── docker/             # Orchestration & Environment configs
+├── apps/               # Core Modules (Auth, Vault, DMS, Beneficiaries, Notifications)
+├── core/               # Shared Security & Middleware
+├── frontend/           # React + Vite (Custom Design System)
+├── config/             # Django & Celery Configuration
+└── scripts/            # Maintenance & Utility Scripts
 ```
 
 ---
 
-## 🛠️ Developer Commands
-
-| Task | Command |
-| :--- | :--- |
-| **Start Services** | `docker-compose up` |
-| **Stop & Wipe DB** | `docker-compose down -v` |
-| **Backend Tests** | `docker-compose exec api pytest` |
-| **Frontend Lint** | `cd frontend && npm run lint` |
-| **Build Frontend** | `cd frontend && npm run build` |
-
----
-
-## 🛡️ Security Guidelines
-1. **Zero Trust:** Never commit `.env` or sensitive keys to version control.
-2. **Encryption:** Use the `EncryptionService` in `core/` for all sensitive fields.
-3. **API Standards:** Always return responses using the standard `{success, data, error}` envelope.
-
----
-
-## ❓ Troubleshooting
-
-### ❌ Frontend: "Cannot find native binding"
-**Fix:** Delete `frontend/node_modules` on your host machine. Docker will manage dependencies internally within its own isolated volume.
-
-### ❌ Database: "Relation [x] does not exist"
-**Fix:** Ensure migrations are synced: `docker-compose exec api python manage.py migrate`.
-
-### ❌ Network: Docker "Handshake Timeout"
-**Fix:** In Docker Desktop Settings → Docker Engine, ensure your DNS is set to Google's public DNS:
-```json
-{ "dns": ["8.8.8.8", "8.8.4.4"] }
-```
+## ☁️ Deployment
+This project is optimized for deployment on **AWS (EC2 Free Tier)**. Detailed instructions for setting up your production server, including SSL and Swap memory configuration, can be found in [AWS_DEPLOYMENT.md](./AWS_DEPLOYMENT.md).
 
 ---
 

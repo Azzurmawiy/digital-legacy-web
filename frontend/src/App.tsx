@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { Menu } from 'lucide-react';
@@ -55,6 +55,27 @@ const MainLayout = () => {
 
 
 function App() {
+  const { isInitializing, checkAuth } = useAuthStore();
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
+  if (isInitializing) {
+    return (
+      <div style={{ 
+        height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', 
+        background: 'var(--bg-main)', color: 'var(--primary)', flexDirection: 'column', gap: '20px' 
+      }}>
+        <div className="loading-spinner" style={{ width: '40px', height: '40px', border: '3px solid var(--primary-dim)', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+        <div style={{ fontSize: '12px', letterSpacing: '2px', textTransform: 'uppercase', fontWeight: 600 }}>Initializing Vault</div>
+        <style>{`
+          @keyframes spin { to { transform: rotate(360deg); } }
+        `}</style>
+      </div>
+    );
+  }
+
   return (
     <Router>
       <Toaster position="top-right" toastOptions={{ style: { background: 'var(--bg-panel)', color: 'var(--text-main)', border: '1px solid var(--border-gold)' } }} />

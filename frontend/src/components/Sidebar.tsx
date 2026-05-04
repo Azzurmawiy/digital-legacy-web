@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { LayoutDashboard, Lock, Users, Clock, History, Heart, Hexagon, X } from 'lucide-react';
+import { useAuthStore } from '../store/useAuthStore';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -7,6 +8,7 @@ interface SidebarProps {
 }
 
 const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
+  const { user } = useAuthStore();
   return (
     <>
       {/* Mobile overlay backdrop */}
@@ -74,10 +76,14 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
               fontSize: '13px', fontWeight: 800, color: '#1a1408',
               boxShadow: '0 4px 10px rgba(212,168,83,0.3)',
               flexShrink: 0
-            }}>UA</div>
+            }}>
+              {user?.email ? user.email[0].toUpperCase() : 'U'}
+            </div>
             <div className="sidebar-logo-text">
-              <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-main)', whiteSpace: 'nowrap' }}>Usman A.</div>
-              <div style={{ fontSize: '11px', color: 'var(--text-dim)', whiteSpace: 'nowrap' }}>Administrator</div>
+              <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-main)', whiteSpace: 'nowrap' }}>
+                {user?.email ? user.email.split('@')[0] : 'User'}
+              </div>
+              <div style={{ fontSize: '11px', color: 'var(--text-dim)', whiteSpace: 'nowrap' }}>Account Owner</div>
             </div>
           </div>
         </div>

@@ -8,14 +8,20 @@ from .serializers import DMSConfigSerializer, HeartbeatSerializer
 class DMSConfigView(generics.RetrieveUpdateAPIView):
     """
     Retrieve or update the user's Dead Man's Switch configuration.
-    Creates a default configuration if one does not exist.
     """
     serializer_class = DMSConfigSerializer
     permission_classes = [IsAuthenticated]
 
     def get_object(self):
+        # Always return the configuration for the current user
         obj, created = DMSConfig.objects.get_or_create(user=self.request.user)
         return obj
+
+    def patch(self, request, *args, **kwargs):
+        return self.partial_update(request, *args, **kwargs)
+
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
 
 
 class HeartbeatCreateView(generics.CreateAPIView):

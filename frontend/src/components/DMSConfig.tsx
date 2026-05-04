@@ -25,8 +25,10 @@ const DMSConfig = () => {
         cooling_off_days: coolingOff
       });
       toast.success('DMS configuration saved successfully.');
-    } catch {
-      toast.error('Failed to save configuration.');
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.error?.message || err.message || 'Failed to save configuration.';
+      toast.error(`Save Failed: ${errorMsg}`);
+      console.error("DMS Save Error:", err.response?.data);
     }
   };
 

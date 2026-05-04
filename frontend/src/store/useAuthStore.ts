@@ -3,22 +3,55 @@ import { apiClient } from '../api/axios';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 
+interface User {
+  id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  is_verified: boolean;
+}
+
+interface DashboardStats {
+  vault_count: number;
+  vault_size_mb: number;
+  beneficiary_count: number;
+  dms_status: string;
+  dms_days_left: number;
+  memories_count: number;
+  safety_score: number;
+}
+
 interface AuthState {
   isAuthenticated: boolean;
-  user: Record<string, unknown> | null;
+  user: User | null;
+  stats: DashboardStats | null;
   isLoading: boolean;
+  isInitializing: boolean;
   error: string | null;
   login: (credentials: Record<string, unknown>) => Promise<void>;
   register: (data: Record<string, unknown>) => Promise<void>;
   logout: () => void;
-  checkAuth: () => void;
+  checkAuth: () => Promise<void>;
+  fetchStats: () => Promise<void>;
+  fetchUser: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
   isAuthenticated: !!localStorage.getItem('access_token'),
   user: null,
+  stats: null,
   isLoading: false,
+  isInitializing: true,
   error: null,
+
+  fetchStats: async () => {
+    try {
+      const response = await apiClient.get('/auth/stats/');
+      set({ stats: response.data });
+    } catch (err) {
+      console.error('Failed to fetch stats', err);
+    }
+  },
 
   login: async (credentials) => {
     set({ isLoading: true, error: null });
@@ -62,11 +95,37 @@ export const useAuthStore = create<AuthState>((set) => ({
   logout: () => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
-    set({ isAuthenticated: false, user: null });
+    set({ isAuthenticated: false, user: null, stats: null });
   },
 
-  checkAuth: () => {
+  fetchUser: async () => {
+    try {
+      const response = await apiClient.get('/auth/user/');
+      set({ user: response.data, isAuthenticated: true });
+    } catch (err) {
+      console.error('Failed to fetch user', err);
+      // If we can't fetch the user, the token is likely invalid
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      set({ isAuthenticated: false, user: null });
+    }
+  },
+
+  checkAuth: async () => {
     const token = localStorage.getItem('access_token');
-    set({ isAuthenticated: !!token });
+    if (!token) {
+      set({ isAuthenticated: false, user: null });
+      return;
+    }
+
+    // Attempt to fetch user to verify token
+    try {
+      const response = await apiClient.get('/auth/user/');
+      set({ user: response.data, isAuthenticated: true, isInitializing: false });
+    } catch (err) {
+      set({ isAuthenticated: false, user: null, isInitializing: false });
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+    }
   }
 }));

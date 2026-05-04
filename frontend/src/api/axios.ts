@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8000/api/v1';
+const API_URL = (import.meta.env.VITE_API_URL as string) || `http://${window.location.hostname}:8000/api/v1`;
 
 export const apiClient = axios.create({
   baseURL: API_URL,
@@ -12,9 +12,14 @@ export const apiClient = axios.create({
 // Request interceptor to add JWT
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('access_token');
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
+    // DO NOT add token for login or register requests
+    const isAuthRequest = config.url?.includes('/auth/login/') || config.url?.includes('/auth/register/');
+    
+    if (!isAuthRequest) {
+      const token = localStorage.getItem('access_token');
+      if (token && config.headers) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
     return config;
   },
@@ -29,6 +34,15 @@ apiClient.interceptors.response.use(
 
     // Handle 401 Unauthorized errors for expired tokens
     if (error.response?.status === 401 && !originalRequest._retry) {
+      // If the error is specifically "token not valid", just log out immediately to clear the state
+      const errorDetail = error.response?.data?.detail || "";
+      if (errorDetail.includes("token not valid") || errorDetail.includes("invalid_token")) {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        window.location.href = '/login';
+        return Promise.reject(error);
+      }
+
       originalRequest._retry = true;
 
       try {

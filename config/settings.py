@@ -379,15 +379,17 @@ TWILIO_PHONE_NUMBER = env('TWILIO_PHONE_NUMBER')
 # ============================================================
 # EMAIL CONFIGURATION
 # ============================================================
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # Console output in development
-if not DEBUG:
-    # Configure SMTP in production
+# Use real SMTP if credentials are provided, otherwise fall back to console
+EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
+
+if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD:
     EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
     EMAIL_HOST = env('EMAIL_HOST', default='smtp.gmail.com')
     EMAIL_PORT = env('EMAIL_PORT', default=587)
     EMAIL_USE_TLS = env('EMAIL_USE_TLS', default=True)
-    EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
-    EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
+else:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='noreply@digitallegacy.ng')
 
