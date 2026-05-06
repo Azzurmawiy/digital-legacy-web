@@ -101,3 +101,12 @@ class BeneficiaryTests(APITestCase):
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(Beneficiary.objects.count(), 0)
+
+    def test_delete_nonexistent_beneficiary(self):
+        # Try to delete a beneficiary that doesn't exist
+        from uuid import uuid4
+        fake_id = uuid4()
+        url = reverse('beneficiary:beneficiary-detail', args=[fake_id])
+        response = self.client.delete(url)
+        # Should return 204 (idempotent delete)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
