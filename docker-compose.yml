@@ -75,8 +75,10 @@ services:
     volumes:
       - .:/app
     depends_on:
-      - api
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     command: celery -A config.celery worker --loglevel=info
 
   # ---- Celery Beat (Cron scheduler for DMS checks) ----
@@ -84,7 +86,7 @@ services:
     build:
       context: .
       target: development
-    container_name: dl_celery_beat
+    container_name: dl-celery-beat
     restart: unless-stopped
     env_file: .env
     environment:
@@ -93,8 +95,10 @@ services:
     volumes:
       - .:/app
     depends_on:
-      - api
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     command: celery -A config.celery beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
 
   # ---- Frontend (React + Vite) ----

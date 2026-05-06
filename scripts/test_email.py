@@ -12,6 +12,10 @@ django.setup()
 def send_test_email(recipient):
     print(f"Attempting to send test email to: {recipient}...")
     print(f"Using Backend: {settings.EMAIL_BACKEND}")
+    print(f"Host: {settings.EMAIL_HOST}")
+    print(f"Port: {settings.EMAIL_PORT}")
+    print(f"User: {settings.EMAIL_HOST_USER}")
+    print(f"TLS: {settings.EMAIL_USE_TLS}")
     print(f"From Email: {settings.DEFAULT_FROM_EMAIL}")
     
     try:
@@ -22,9 +26,9 @@ def send_test_email(recipient):
             recipient_list=[recipient],
             fail_silently=False,
         )
-        print("\n✅ SUCCESS: Email sent! Please check your inbox (and spam folder).")
+        print("\nSUCCESS: Email sent! Please check your inbox (and spam folder).")
     except Exception as e:
-        print(f"\n❌ FAILED: Could not send email.")
+        print(f"\nFAILED: Could not send email.")
         print(f"Error: {str(e)}")
 
 if __name__ == "__main__":

@@ -7,6 +7,7 @@ const Register = () => {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
+    phone: '',
     first_name: '',
     last_name: ''
   });
@@ -73,9 +74,15 @@ const Register = () => {
               <input type="text" name="last_name" className="input-field" value={formData.last_name} onChange={handleChange} required />
             </div>
           </div>
-          <div>
-            <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase' }}>Email Address</label>
-            <input type="email" name="email" className="input-field" value={formData.email} onChange={handleChange} required />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase' }}>Email Address</label>
+              <input type="email" name="email" className="input-field" value={formData.email} onChange={handleChange} required />
+            </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase' }}>Phone (Optional)</label>
+              <input type="text" name="phone" className="input-field" value={formData.phone || ''} onChange={handleChange} placeholder="+234..." />
+            </div>
           </div>
           <div>
             <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase' }}>Master Password</label>

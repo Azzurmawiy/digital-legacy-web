@@ -59,7 +59,8 @@ class HeartbeatSerializer(serializers.ModelSerializer):
         
         # Reset DMS status if it was in warning phase
         try:
-            dms = user.dms_config
+            # Use explicit lookup to avoid stale cached properties in tests
+            dms = DMSConfig.objects.get(user=user)
             if dms.status in [DMSConfig.Status.WARNING_1, DMSConfig.Status.WARNING_2, DMSConfig.Status.COOLING_OFF]:
                 dms.status = DMSConfig.Status.ACTIVE
                 dms.save(update_fields=['status'])

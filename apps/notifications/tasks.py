@@ -5,7 +5,7 @@ from django.utils import timezone
 from .models import Notification
 
 @shared_task
-def send_email_notification(user_id, subject, message):
+def send_email_notification(user_id, subject, message, recipient_email=None):
     """
     Async task to send an email notification and log it.
     """
@@ -17,6 +17,8 @@ def send_email_notification(user_id, subject, message):
     except User.DoesNotExist:
         return
         
+    target_email = recipient_email or user.email
+    
     notification = Notification.objects.create(
         user=user,
         channel=Notification.Channel.EMAIL,
@@ -29,7 +31,7 @@ def send_email_notification(user_id, subject, message):
             subject=subject,
             message=message,
             from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[user.email],
+            recipient_list=[target_email],
             fail_silently=False,
         )
         notification.status = Notification.Status.SENT
@@ -43,9 +45,10 @@ def send_email_notification(user_id, subject, message):
 @shared_task
 def send_sms_notification(user_id, message):
     """
-    Async task to send an SMS notification and log it.
+    Async task to send an SMS notification via Twilio and log it.
     """
     from django.contrib.auth import get_user_model
+    from twilio.rest import Client
     User = get_user_model()
     
     try:
@@ -59,10 +62,15 @@ def send_sms_notification(user_id, message):
         message=message
     )
     
-    # Mock SMS sending - replace with Twilio integration later
-    if user.phone:
+    if user.phone and settings.TWILIO_ACCOUNT_SID and settings.TWILIO_AUTH_TOKEN:
         try:
-            # Twilio logic here
+            client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
+            client.messages.create(
+                body=message,
+                from_=settings.TWILIO_PHONE_NUMBER,
+                to=user.phone
+            )
+            
             notification.status = Notification.Status.SENT
             notification.sent_at = timezone.now()
             notification.save(update_fields=['status', 'sent_at'])
@@ -72,5 +80,5 @@ def send_sms_notification(user_id, message):
             notification.save(update_fields=['status', 'error_message'])
     else:
         notification.status = Notification.Status.FAILED
-        notification.error_message = "No phone number available."
+        notification.error_message = "Phone number missing or Twilio not configured."
         notification.save(update_fields=['status', 'error_message'])

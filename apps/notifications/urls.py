@@ -16,12 +16,17 @@ class NotificationHistoryView(APIView):
         notifications = Notification.objects.filter(user=request.user).order_by('-created_at')
         data = [{
             "id": n.id,
-            "channel": n.channel,
-            "subject": n.subject,
+            "action": n.subject or "System Event",
+            "detail": n.message,
+            "time": n.created_at.isoformat(),
             "status": n.status,
-            "created_at": n.created_at
+            "channel": n.channel,
+            "icon": "ShieldCheck" if "Vault" in (n.subject or "") else "Activity"
         } for n in notifications[:50]]
-        return Response(data)
+        return Response({
+            "success": True,
+            "data": data
+        })
 
 
 urlpatterns = [

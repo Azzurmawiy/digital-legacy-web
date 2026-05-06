@@ -60,6 +60,7 @@ def admin_user(db):
         password='AdminPass123!',
         first_name='Admin',
         last_name='User',
+        is_email_verified=True,
     )
 
 

@@ -100,7 +100,15 @@ def custom_exception_handler(exc: Exception, context: Any) -> Response:
             if 'detail' in error_data:
                 message = str(error_data['detail'])
             else:
-                message = json.dumps({k: str(v) for k, v in error_data.items()})
+                # Concatenate field errors into a readable string
+                messages = []
+                for field, errors in error_data.items():
+                    if isinstance(errors, list):
+                        msg = '; '.join([str(e) for e in errors])
+                    else:
+                        msg = str(errors)
+                    messages.append(f"{field}: {msg}")
+                message = ' '.join(messages)
         elif isinstance(error_data, list):
             message = '; '.join(str(e) for e in error_data)
         elif isinstance(error_data, str):

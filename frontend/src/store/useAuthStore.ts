@@ -11,14 +11,23 @@ interface User {
   is_verified: boolean;
 }
 
+interface ActivityItem {
+  icon: string;
+  title: string;
+  sub: string;
+  time: string;
+}
+
 interface DashboardStats {
   vault_count: number;
   vault_size_mb: number;
   beneficiary_count: number;
   dms_status: string;
   dms_days_left: number;
+  dms_threshold: number;
   memories_count: number;
   safety_score: number;
+  recent_activity?: ActivityItem[];
 }
 
 interface AuthState {
@@ -28,7 +37,7 @@ interface AuthState {
   isLoading: boolean;
   isInitializing: boolean;
   error: string | null;
-  login: (credentials: Record<string, unknown>) => Promise<void>;
+  login: (credentials: Record<string, unknown>) => Promise<any>;
   register: (data: Record<string, unknown>) => Promise<void>;
   logout: () => void;
   checkAuth: () => Promise<void>;
@@ -47,7 +56,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   fetchStats: async () => {
     try {
       const response = await apiClient.get('/auth/stats/');
-      set({ stats: response.data });
+      set({ stats: response.data?.data || response.data });
     } catch (err) {
       console.error('Failed to fetch stats', err);
     }
@@ -67,10 +76,15 @@ export const useAuthStore = create<AuthState>((set) => ({
       if (access && refresh) {
         localStorage.setItem('access_token', access);
         localStorage.setItem('refresh_token', refresh);
-        set({ isAuthenticated: true, isLoading: false });
+        set({ 
+          isAuthenticated: true, 
+          user: data.user || data.data?.user, 
+          isLoading: false 
+        });
       } else {
-        set({ error: 'Invalid response from server', isLoading: false });
+        set({ isLoading: false });
       }
+      return data.data || data;
     } catch (err: unknown) {
       const message = axios.isAxiosError(err) ? (err.response?.data?.error?.message || err.response?.data?.detail || 'Login failed') : (err instanceof Error ? err.message : 'Login failed');
       set({ error: message, isLoading: false });
@@ -100,8 +114,9 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   fetchUser: async () => {
     try {
-      const response = await apiClient.get('/auth/user/');
-      set({ user: response.data, isAuthenticated: true });
+      const response = await apiClient.get('/auth/profile/');
+      const userData = response.data?.data || response.data;
+      set({ user: userData, isAuthenticated: true });
     } catch (err) {
       console.error('Failed to fetch user', err);
       // If we can't fetch the user, the token is likely invalid
@@ -114,15 +129,17 @@ export const useAuthStore = create<AuthState>((set) => ({
   checkAuth: async () => {
     const token = localStorage.getItem('access_token');
     if (!token) {
-      set({ isAuthenticated: false, user: null });
+      set({ isAuthenticated: false, user: null, isInitializing: false });
       return;
     }
 
     // Attempt to fetch user to verify token
     try {
-      const response = await apiClient.get('/auth/user/');
-      set({ user: response.data, isAuthenticated: true, isInitializing: false });
+      const response = await apiClient.get('/auth/profile/');
+      const userData = response.data?.data || response.data;
+      set({ user: userData, isAuthenticated: true, isInitializing: false });
     } catch (err) {
+      console.error('CheckAuth failed:', err);
       set({ isAuthenticated: false, user: null, isInitializing: false });
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');

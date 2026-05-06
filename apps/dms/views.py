@@ -41,7 +41,8 @@ class DMSCancelView(views.APIView):
 
     def post(self, request, *args, **kwargs):
         try:
-            dms_config = request.user.dms_config
+            # Use explicit lookup to avoid stale cached properties in tests
+            dms_config = DMSConfig.objects.get(user=request.user)
         except DMSConfig.DoesNotExist:
             return Response(
                 {"error": "DMS configuration not found."},

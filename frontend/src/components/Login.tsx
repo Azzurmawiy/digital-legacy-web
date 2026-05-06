@@ -4,7 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Hexagon, ShieldCheck } from 'lucide-react';
 
 const Login = () => {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const { login, isLoading, error } = useAuthStore();
   const navigate = useNavigate();
@@ -12,7 +12,7 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await login({ email, password });
+      await login({ username, password });
       navigate('/dashboard');
     } catch {
       // Error is handled by store
@@ -43,13 +43,13 @@ const Login = () => {
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div>
-            <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Email Address</label>
+            <label style={{ display: 'block', marginBottom: '8px', fontSize: '12px', fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Email or Phone</label>
             <input 
-              type="email" 
+              type="text" 
               className="input-field" 
-              placeholder="name@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email or Phone Number"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               required 
             />
           </div>

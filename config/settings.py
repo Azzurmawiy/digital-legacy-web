@@ -7,6 +7,7 @@
 
 import environ
 import os
+import sys
 from pathlib import Path
 from datetime import timedelta
 
@@ -44,12 +45,14 @@ env = environ.Env(
 # Read .env file
 environ.Env.read_env(BASE_DIR / '.env')
 
-# ============================================================
-# CORE DJANGO SETTINGS
-# ============================================================
+# ---- Core Django Settings ----
 SECRET_KEY = env('SECRET_KEY')
 DEBUG = env('DEBUG')
 ALLOWED_HOSTS = env('ALLOWED_HOSTS')
+
+# For testing (pytest), add testserver to ALLOWED_HOSTS
+if 'pytest' in sys.modules or os.environ.get('PYTEST_CURRENT_TEST'):
+    ALLOWED_HOSTS.append('testserver')
 
 # ---- Application Definition ----
 DJANGO_APPS = [
@@ -114,23 +117,28 @@ ASGI_APPLICATION = 'config.asgi.application'
 # ============================================================
 AUTHENTICATION_BACKENDS = [
     'axes.backends.AxesStandaloneBackend',  # Account lockout backend
+    'apps.authentication.backends.PhoneOrEmailBackend',  # Allow email or phone
     'django.contrib.auth.backends.ModelBackend',  # Default Django backend
 ]
 
 # ============================================================
 # DATABASE
 # ============================================================
-DATABASES = {
-    'default': env.db('DATABASE_URL')
-}
-# Persistent connections for performance
-DATABASES['default']['CONN_MAX_AGE'] = 60
+DATABASE_URL = env('DATABASE_URL', default=f"sqlite:///{BASE_DIR}/db.sqlite3")
 
-# PostgreSQL-specific options (not applicable to SQLite)
-if DATABASES['default']['ENGINE'] == 'django.db.backends.postgresql':
+DATABASES = {
+    'default': env.db_url_config(DATABASE_URL)
+}
+
+# Persistent connections for performance (PostgreSQL only)
+if DATABASES['default']['ENGINE'] != 'django.db.backends.sqlite3':
+    DATABASES['default']['CONN_MAX_AGE'] = 60
+
+# PostgreSQL-specific options
+if DATABASES['default'].get('ENGINE') == 'django.db.backends.postgresql':
     DATABASES['default']['OPTIONS'] = {
         'connect_timeout': 10,
-        'sslmode': 'require' if not DEBUG else 'prefer',
+        'sslmode': 'prefer',
     }
 
 # ============================================================
@@ -215,8 +223,8 @@ SIMPLE_JWT = {
 # ============================================================
 # CACHING
 # ============================================================
-# Use Redis in production, local memory cache in development
-if DEBUG:
+# Use Redis in production, local memory cache in development/tests
+if DEBUG or ('pytest' in sys.modules or os.environ.get('PYTEST_CURRENT_TEST')):
     CACHES = {
         'default': {
             'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
@@ -257,17 +265,20 @@ AXES_VERBOSE = True
 # ============================================================
 # CELERY (Background Tasks — DMS Scheduler)
 # ============================================================
-# Use Redis in production, in-memory broker in development
-if DEBUG and not env('REDIS_URL', default=''):
-    # Development (without Redis): Use in-memory broker
+# Use Redis in production, in-memory broker in development if Redis is missing
+# On Windows/Dev, if Redis isn't running, we fallback to eager mode to avoid connection errors.
+REDIS_URL = env('REDIS_URL')
+
+if DEBUG and (not REDIS_URL or 'localhost' in REDIS_URL):
+    # In development, try to use memory broker if we suspect Redis might not be there
+    # or just use Eager mode for simplicity on Windows local dev.
     CELERY_BROKER_URL = 'memory://'
     CELERY_RESULT_BACKEND = 'rpc://'
     CELERY_TASK_ALWAYS_EAGER = True
 else:
-    # Production or Development with Redis: Use Redis
-    CELERY_BROKER_URL = env('REDIS_URL')
-    CELERY_RESULT_BACKEND = env('REDIS_URL')
-
+    # Production or specific Redis setup
+    CELERY_BROKER_URL = REDIS_URL
+    CELERY_RESULT_BACKEND = REDIS_URL
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
@@ -300,23 +311,24 @@ AWS_S3_OBJECT_PARAMETERS = {
     'CacheControl': 'max-age=0, no-cache',       # No browser caching of vault files
 }
 
+STATIC_URL = '/static/'
 if not DEBUG:
     DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
     STATIC_LOCATION = 'static'
     MEDIA_LOCATION = 'media'
+    STATIC_ROOT = BASE_DIR / 'staticfiles'
 else:
     MEDIA_URL = '/media/'
     MEDIA_ROOT = BASE_DIR / 'media'
-    STATIC_URL = '/static/'
     STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # ============================================================
 # SECURITY SETTINGS
 # ============================================================
-# HTTPS settings — enforced in production
-SECURE_SSL_REDIRECT = not DEBUG
+# HTTPS settings — enforced in production (can be disabled via env for local prod testing)
+SECURE_SSL_REDIRECT = env.bool('SECURE_SSL_REDIRECT', default=not DEBUG) and not ('pytest' in sys.modules or os.environ.get('PYTEST_CURRENT_TEST'))
 if not DEBUG:
-    SECURE_HSTS_SECONDS = 31536000          # 1 year
+    SECURE_HSTS_SECONDS = env.int('SECURE_HSTS_SECONDS', default=31536000)  # 1 year
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
 else:
@@ -326,13 +338,13 @@ SECURE_BROWSER_XSS_FILTER = True
 X_FRAME_OPTIONS = 'DENY'
 SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
 
-# Cookie security
-SESSION_COOKIE_SECURE = not DEBUG
+# Cookie security — can be disabled for local prod testing via env
+SESSION_COOKIE_SECURE = env.bool('SESSION_COOKIE_SECURE', default=not DEBUG)
 SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_SAMESITE = 'Strict'
-CSRF_COOKIE_SECURE = not DEBUG
+SESSION_COOKIE_SAMESITE = 'Lax'             # Changed from Strict to Lax for better auth flow compatibility
+CSRF_COOKIE_SECURE = env.bool('CSRF_COOKIE_SECURE', default=not DEBUG)
 CSRF_COOKIE_HTTPONLY = True
-CSRF_COOKIE_SAMESITE = 'Strict'
+CSRF_COOKIE_SAMESITE = 'Lax'
 
 # Custom encryption key (for symmetric encryption in vault)
 ENCRYPTION_KEY = env('ENCRYPTION_KEY')
@@ -356,6 +368,17 @@ CORS_ALLOW_HEADERS = [
     'x-csrftoken', 'x-requested-with', 'x-request-id',
 ]
 CORS_EXPOSE_HEADERS = ['X-Request-Id']
+
+# CSRF Trusted Origins (required for Django 4.0+)
+CSRF_TRUSTED_ORIGINS = [
+    origin for origin in env.list('CORS_ALLOWED_ORIGINS', default=[])
+    if origin.startswith('http')
+]
+# Ensure localhost is included for local testing
+if 'http://localhost' not in CSRF_TRUSTED_ORIGINS:
+    CSRF_TRUSTED_ORIGINS.append('http://localhost')
+if 'http://127.0.0.1' not in CSRF_TRUSTED_ORIGINS:
+    CSRF_TRUSTED_ORIGINS.append('http://127.0.0.1')
 
 # ============================================================
 # DEAD MAN'S SWITCH SETTINGS

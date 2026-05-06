@@ -36,11 +36,12 @@ ENV PYTHONUNBUFFERED=1
 ENV DJANGO_SETTINGS_MODULE=config.settings
 WORKDIR /app
 
-# Security: non-root user
+# Security: non-root user with home directory
 RUN addgroup --system --gid 1001 django \
-    && adduser --system --uid 1001 --gid 1001 django
+    && adduser --system --uid 1001 --gid 1001 --home /home/django django
+ENV HOME=/home/django
 
-RUN apt-get update && apt-get install -y --no-install-recommends libpq5 netcat-traditional \
+RUN apt-get update && apt-get install -y --no-install-recommends libpq5 netcat-openbsd \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder --chown=django:django /app /app
@@ -49,6 +50,9 @@ COPY --from=builder --chown=django:django /usr/local/bin /usr/local/bin
 
 COPY entrypoint.sh .
 RUN chmod +x entrypoint.sh
+
+# Create staticfiles dir and ensure django user owns it
+RUN mkdir -p /app/staticfiles && chown -R django:django /app/staticfiles
 
 USER django
 EXPOSE 8000

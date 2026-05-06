@@ -28,28 +28,30 @@ class RegisterView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         user = serializer.save()
-        if settings.DEBUG:
-            user.is_active = True
-            user.is_email_verified = True
-            user.save()
-        else:
-            self.send_otp(user)
+        # Always trigger OTP verification to allow testing live email authentication
+        self.send_otp(user)
         return user
 
     def send_otp(self, user):
         otp = str(random.randint(100000, 999999))
-        # In production, store OTP hashed with expiry in Redis or DB model
-        # For simplicity, we'll print it (replace with real storage)
-        print(f"OTP for {user.email}: {otp}")   # TODO: Replace with proper OTP model + Redis
-
-        send_mail(
+        
+        # 1. Send via Email
+        from apps.notifications.tasks import send_email_notification
+        send_email_notification.delay(
+            user.id,
             subject='Your Digital Legacy Account Verification OTP',
-            message=f'Your verification OTP is: {otp}\nIt expires in 10 minutes.',
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[user.email],
-            fail_silently=False,
+            message=f'Your verification OTP is: {otp}\nIt expires in 10 minutes.'
         )
-        # TODO: Save OTP properly (recommended: create OTP model or use cache)
+        
+        # 2. Send via SMS if phone is available
+        if user.phone:
+            from apps.notifications.tasks import send_sms_notification
+            send_sms_notification.delay(
+                user.id,
+                message=f"Your Digital Legacy verification code is: {otp}"
+            )
+        
+        print(f"OTP for {user.email}: {otp}")
 
 class VerifyOTPView(generics.GenericAPIView):
     serializer_class = OTPVerifySerializer
@@ -75,6 +77,32 @@ class VerifyOTPView(generics.GenericAPIView):
         except User.DoesNotExist:
             return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
 
+class ResendOTPView(generics.GenericAPIView):
+    """Allows users to request a new OTP if they didn't receive the previous one."""
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def post(self, request):
+        email = request.data.get('email')
+        if not email:
+            return Response({"error": "Email is required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            user = User.objects.get(email=email)
+            if user.is_email_verified:
+                return Response({"message": "Account already verified."}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Re-use the logic from RegisterView
+            view = RegisterView()
+            view.send_otp(user)
+            
+            return Response({
+                "success": True, 
+                "message": "Verification code resent successfully."
+            })
+        except User.DoesNotExist:
+            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
 class LoginView(generics.GenericAPIView):
     serializer_class = LoginSerializer
     permission_classes = [AllowAny]
@@ -84,22 +112,18 @@ class LoginView(generics.GenericAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        email = serializer.validated_data['email']
+        username = serializer.validated_data['username']
         password = serializer.validated_data['password']
         totp_token = serializer.validated_data.get('totp_token')
 
-        auth_user = authenticate(request, username=email, password=password)  # email as username
+        auth_user = authenticate(request, username=username, password=password)
 
         if not auth_user:
             return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
-        # Type cast to our custom User model
         user: User = auth_user  # type: ignore
 
-        if not user.is_email_verified:
-            return Response({"error": "Account not verified. Please verify your email."}, status=status.HTTP_403_FORBIDDEN)
-
-        # MFA Check
+        # MFA Check (TOTP)
         if user.mfa_enabled and not totp_token:
             return Response({
                 "mfa_required": True,
@@ -114,7 +138,7 @@ class LoginView(generics.GenericAPIView):
         refresh = RefreshToken.for_user(user)
         return Response({
             'success': True,
-            'access': str(refresh.access_token),  # type: ignore
+            'access': str(refresh.access_token),
             'refresh': str(refresh),
             'user': {
                 'id': str(user.id),
@@ -122,6 +146,30 @@ class LoginView(generics.GenericAPIView):
                 'mfa_enabled': user.mfa_enabled
             }
         })
+
+    def send_login_otp(self, user, otp_type=None):
+        from .models import OtpVerification
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        otp_type = otp_type or OtpVerification.OtpType.LOGIN_MFA
+        otp = str(random.randint(100000, 999999))
+        
+        # Save to DB
+        OtpVerification.objects.create(
+            user=user,
+            otp_type=otp_type,
+            code_hash=otp, # SECURITY: In production, hash this!
+            expires_at=timezone.now() + timedelta(minutes=10)
+        )
+        
+        from apps.notifications.tasks import send_email_notification
+        send_email_notification.delay(
+            user.id,
+            subject='Secure Login Code',
+            message=f'Your verification code is: {otp}\nIt expires in 10 minutes.'
+        )
+        print(f"LOGIN OTP for {user.email}: {otp}")
 
 class MFASetupView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
@@ -318,14 +366,25 @@ class DashboardStatsView(APIView):
         heirs_count = Beneficiary.objects.filter(user=user).count()
         
         # 4. DMS Stats
+        dms_threshold = 90  # Default
+        safety_score = 100
         try:
             dms = DMSConfig.objects.get(user=user)
-            dms_status = dms.status
-            # Simple calculation for days left (mock for now if method doesn't exist)
-            days_left = dms.inactivity_threshold_days
+            # Normalize status for frontend (Active vs ACTIVE)
+            dms_status = "Active" if dms.status == "ACTIVE" else dms.status
+            dms_threshold = dms.inactivity_threshold_days
+            
+            # Calculate actual days left based on user's last activity
+            delta = timezone.now() - user.last_active_at
+            days_left = max(0, dms_threshold - delta.days)
+            
+            # Calculate safety score (percentage of time remaining)
+            if dms_threshold > 0:
+                safety_score = round((days_left / dms_threshold) * 100)
         except DMSConfig.DoesNotExist:
             dms_status = "Inactive"
             days_left = 0
+            safety_score = 0
 
         # 5. Memories count (filtering items with image mime types)
         memories_count = VaultItem.objects.filter(user=user, mime_type__icontains='image').count()
@@ -337,13 +396,22 @@ class DashboardStatsView(APIView):
             recent_notifications = Notification.objects.filter(user=user).order_by('-created_at')[:5]
             for n in recent_notifications:
                 activity_data.append({
-                    "title": n.title,
+                    "title": n.subject or "System Notification",
                     "sub": n.message[:50],
                     "time": n.created_at.isoformat(),
                     "icon": "🔔"
                 })
-        except ImportError:
+        except (ImportError, AttributeError):
             pass
+
+        # 7. Recent Vault Assets
+        recent_vault = VaultItem.objects.filter(user=user).order_by('-uploaded_at')[:3]
+        recent_vault_data = [{
+            "id": str(item.id),
+            "title": item.title,
+            "type": item.item_type,
+            "uploaded_at": item.uploaded_at.isoformat()
+        } for item in recent_vault]
 
         return Response({
             "vault_count": vault_count,
@@ -352,5 +420,8 @@ class DashboardStatsView(APIView):
             "memories_count": memories_count,
             "dms_status": dms_status,
             "dms_days_left": days_left,
-            "recent_activity": activity_data
+            "dms_threshold": dms_threshold,
+            "safety_score": safety_score,
+            "recent_activity": activity_data,
+            "recent_vault": recent_vault_data
         })

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { Clock, FileText, Users, Heart, ArrowUpRight } from 'lucide-react';
 import { useDmsStore } from '../store/useDmsStore';
 import { useAuthStore } from '../store/useAuthStore';
@@ -27,14 +27,14 @@ const Dashboard = () => {
   const statItems = [
     { 
       label: 'Vault Assets', 
-      value: stats?.vault_count.toString() || '0', 
-      detail: `${stats?.vault_size_mb || 0} MB Secured`, 
+      value: String(stats?.vault_count ?? 0), 
+      detail: `${stats?.vault_size_mb ?? 0} MB Secured`, 
       icon: <FileText size={20} color="var(--primary)" />, 
       color: 'var(--primary)' 
     },
     { 
       label: 'Verified Heirs', 
-      value: stats?.beneficiary_count.toString() || '0', 
+      value: String(stats?.beneficiary_count ?? 0), 
       detail: 'Authorized', 
       icon: <Users size={20} color="var(--success)" />, 
       color: 'var(--success)' 
@@ -42,18 +42,28 @@ const Dashboard = () => {
     { 
       label: 'DMS Status', 
       value: stats?.dms_status || 'Inactive', 
-      detail: `${stats?.dms_days_left || 0} Days Left`, 
+      detail: `${stats?.dms_days_left ?? 0} Days Left`, 
       icon: <Clock size={20} color="var(--accent)" />, 
       color: 'var(--accent)' 
     },
     { 
       label: 'Memories', 
-      value: stats?.memories_count.toString() || '0', 
+      value: String(stats?.memories_count ?? 0), 
       detail: 'Encrypted', 
       icon: <Heart size={20} color="#f06a6a" />, 
       color: '#f06a6a' 
     },
   ];
+
+  const formatTime = (timeStr: string) => {
+    try {
+      const date = new Date(timeStr);
+      if (isNaN(date.getTime())) return 'Just now';
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch {
+      return 'Just now';
+    }
+  };
 
   return (
     <div className="page-content animate-fade-in">
@@ -82,82 +92,94 @@ const Dashboard = () => {
         {statItems.map((stat, i) => (
           <div key={i} className="card" style={{ padding: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-               <div style={{ padding: '10px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid var(--border)' }}>{stat.icon}</div>
+               <div style={{ padding: '10px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid var(--border)' }}>{stat.icon}</div>
                <ArrowUpRight size={16} color="var(--text-dim)" />
             </div>
-            <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{stat.label}</div>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{stat.label}</div>
             <div style={{ fontSize: '32px', fontWeight: 800, margin: '4px 0', fontFamily: 'var(--font-heading)' }}>{stat.value}</div>
             <div style={{ fontSize: '11px', color: stat.color, fontWeight: 700 }}>{stat.detail}</div>
           </div>
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
+        {/* Monitoring Status */}
         <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h3 style={{ fontSize: '18px', fontWeight: 800 }}>Monitoring Status</h3>
-              <Link to="/settings" className="btn btn-ghost" style={{ fontSize: '12px', padding: '6px 12px' }}>Settings</Link>
+              <h3 style={{ fontSize: '16px', fontWeight: 800 }}>Monitoring</h3>
+              <Link to="/settings" className="btn btn-ghost" style={{ fontSize: '10px', padding: '4px 8px' }}>Config</Link>
            </div>
-           <div style={{ display: 'flex', alignItems: 'center', gap: '40px', flex: 1 }}>
-              <div style={{ position: 'relative', width: '140px', height: '140px' }}>
-                 <svg viewBox="0 0 140 140">
-                    <circle cx="70" cy="70" r="62" fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="12"/>
-                    <circle cx="70" cy="70" r="62" fill="none" stroke="url(#goldGradient)" strokeWidth="12"
-                       strokeDasharray="389.5" strokeDashoffset="120" strokeLinecap="round"
-                       transform="rotate(-90 70 70)"/>
-                    <defs>
-                       <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" stopColor="var(--primary)" />
-                          <stop offset="100%" stopColor="var(--primary-light)" />
-                       </linearGradient>
-                    </defs>
+           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', flex: 1 }}>
+              <div style={{ position: 'relative', width: '100px', height: '100px' }}>
+                 <svg viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="8"/>
+                    <circle cx="50" cy="50" r="44" fill="none" stroke="url(#goldGradient)" strokeWidth="8"
+                       strokeDasharray="276.5" strokeDashoffset={276.5 - (276.5 * (stats?.safety_score ?? 0) / 100)} strokeLinecap="round"
+                       transform="rotate(-90 50 50)"/>
                  </svg>
                  <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                    <div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--primary)' }}>{stats?.safety_score || 0}%</div>
-                    <div style={{ fontSize: '10px', color: 'var(--text-dim)', fontWeight: 700, textTransform: 'uppercase' }}>Safety</div>
+                    <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--primary)' }}>{stats?.safety_score ?? 0}%</div>
                  </div>
               </div>
-              <div style={{ flex: 1 }}>
-                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                    <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Time Until Release</span>
-                    <span style={{ fontSize: '13px', fontWeight: 700 }}>{stats?.dms_days_left || 0} / 90 Days</span>
+              <div style={{ width: '100%' }}>
+                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '12px' }}>
+                    <span style={{ color: 'var(--text-dim)' }}>DMS Status</span>
+                    <span style={{ fontWeight: 700 }}>{stats?.dms_days_left ?? 0}d Left</span>
                  </div>
-                 <div style={{ height: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', overflow: 'hidden' }}>
-                    <div style={{ width: `${(stats?.dms_days_left || 0) / 90 * 100}%`, height: '100%', background: 'linear-gradient(90deg, var(--primary), var(--primary-light))', borderRadius: '10px' }}></div>
-                 </div>
-                 <div style={{ marginTop: '20px', padding: '16px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                    <div style={{ fontSize: '11px', color: 'var(--text-dim)', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Security Protocol</div>
-                    <div style={{ fontSize: '13px', color: 'var(--text-main)' }}>Automatic release to <strong>{stats?.beneficiary_count || 0} heirs</strong> if inactive for 90 days.</div>
+                 <div style={{ height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', overflow: 'hidden' }}>
+                    <div style={{ width: `${Math.min(100, ((stats?.dms_days_left ?? 0) / (stats?.dms_threshold ?? 90)) * 100)}%`, height: '100%', background: 'linear-gradient(90deg, var(--primary), var(--primary-light))', borderRadius: '10px' }}></div>
                  </div>
               </div>
            </div>
         </div>
 
-         <div className="card">
+        {/* Recent Vault Assets */}
+        <div className="card">
+           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 800 }}>Recent Vault</h3>
+              <Link to="/vault" className="btn btn-ghost" style={{ fontSize: '10px', padding: '4px 8px' }}>View All</Link>
+           </div>
+           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {stats?.recent_vault && stats.recent_vault.length > 0 ? (
+                stats.recent_vault.map((item: any) => (
+                  <div key={item.id} style={{ display: 'flex', gap: '12px', alignItems: 'center', padding: '10px', borderRadius: '10px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)' }}>
+                     <div style={{ width: '32px', height: '32px', background: 'var(--bg-main)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <FileText size={14} color="var(--primary)" />
+                     </div>
+                     <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '12px', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.title}</div>
+                        <div style={{ fontSize: '10px', color: 'var(--text-dim)' }}>{item.type}</div>
+                     </div>
+                  </div>
+                ))
+              ) : (
+                <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-dim)', fontSize: '12px' }}>No items found.</div>
+              )}
+           </div>
+        </div>
+
+        {/* Recent Activity */}
+        <div className="card">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-               <h3 style={{ fontSize: '18px', fontWeight: 800 }}>Recent Activity</h3>
-               <Link to="/audit" className="btn btn-ghost" style={{ fontSize: '12px', padding: '6px 12px' }}>Logs</Link>
+               <h3 style={{ fontSize: '16px', fontWeight: 800 }}>Security Logs</h3>
+               <Link to="/audit" className="btn btn-ghost" style={{ fontSize: '10px', padding: '4px 8px' }}>Logs</Link>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                {stats?.recent_activity && stats.recent_activity.length > 0 ? (
                  stats.recent_activity.map((item: any, i: number) => (
-                   <div key={i} style={{ display: 'flex', gap: '16px', alignItems: 'center', padding: '12px', borderRadius: '12px', background: 'rgba(255,255,255,0.02)', border: '1px solid transparent', transition: '0.2s' }}>
-                      <div style={{ fontSize: '16px' }}>{item.icon}</div>
-                      <div style={{ flex: 1 }}>
-                         <div style={{ fontSize: '13px', fontWeight: 700 }}>{item.title}</div>
-                         <div style={{ fontSize: '11px', color: 'var(--text-dim)' }}>{item.sub}</div>
+                   <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'center', padding: '10px', borderRadius: '10px', background: 'rgba(255,255,255,0.02)' }}>
+                      <div style={{ fontSize: '14px' }}>{item.icon || '🔔'}</div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                         <div style={{ fontSize: '12px', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.title}</div>
+                         <div style={{ fontSize: '10px', color: 'var(--text-dim)' }}>{formatTime(item.time)}</div>
                       </div>
-                      <div style={{ fontSize: '10px', color: 'var(--text-dim)', fontWeight: 600 }}>{new Date(item.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                    </div>
                  ))
                ) : (
-                 <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-dim)' }}>
-                   <div style={{ fontSize: '24px', marginBottom: '12px' }}>📭</div>
-                   <div style={{ fontSize: '13px' }}>No recent activity to show.</div>
-                 </div>
+                 <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-dim)', fontSize: '12px' }}>No recent activity.</div>
                )}
             </div>
-         </div>
+        </div>
       </div>
     </div>
   );

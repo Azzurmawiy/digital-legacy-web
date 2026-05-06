@@ -38,7 +38,7 @@ class OTPVerifySerializer(serializers.Serializer):
     otp = serializers.CharField(max_length=6)
 
 class LoginSerializer(serializers.Serializer):
-    email = serializers.EmailField()
+    username = serializers.CharField()  # Can be email or phone
     password = serializers.CharField(write_only=True)
     totp_token = serializers.CharField(required=False, allow_blank=True)
 
