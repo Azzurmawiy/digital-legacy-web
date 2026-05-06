@@ -15,6 +15,8 @@ from datetime import timedelta
 # PATH & ENVIRONMENT SETUP
 # ============================================================
 BASE_DIR = Path(__file__).resolve().parent.parent
+LOGS_DIR = BASE_DIR / 'logs'
+LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
 env = environ.Env(
     # Declare types and defaults for all env vars
